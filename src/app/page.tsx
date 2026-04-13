@@ -25,10 +25,6 @@ export default function Home() {
           <PurposeCards selectedPurpose={selectedPurpose} setSelectedPurpose={setSelectedPurpose} disabled={chatStarted} />
         </div>
         <InputForm selectedPurpose={selectedPurpose} onChatStart={setChatStarted} chatStarted={chatStarted} />
-        <div className="mt-16 mb-12">
-          <ProcessFlow />
-        </div>
-        <InputForm selectedPurpose={selectedPurpose} onChatStart={setChatStarted} />
         <Footer />
       </div>
     </main>
