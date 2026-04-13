@@ -1,20 +1,19 @@
 "use client"
 
 import type React from "react"
-import { useState, useRef } from "react"
+import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
-import { AlertCircle } from "lucide-react"
+import { AlertCircle, Send } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Checkbox } from "@/components/ui/checkbox"
 
 interface InputFormProps {
-  onSubmit: (e: React.FormEvent) => void
   selectedPurpose: string | null
 }
 
-export default function InputForm({ onSubmit, selectedPurpose }: InputFormProps) {
+export default function InputForm({ selectedPurpose }: InputFormProps) {
   const [worry, setWorry] = useState("")
   const [favoriteSong, setFavoriteSong] = useState("")
   const [favoriteArtist, setFavoriteArtist] = useState("")
@@ -22,11 +21,11 @@ export default function InputForm({ onSubmit, selectedPurpose }: InputFormProps)
   const [songMood, setSongMood] = useState("")
   const [agreeToPolicy, setAgreeToPolicy] = useState(false)
   const [errors, setErrors] = useState<{ worry?: string; policy?: string }>({})
-  const formRef = useRef<HTMLFormElement>(null)
 
-  const [isSubmitted, setIsSubmitted] = useState(false)
+  const [chatStarted, setChatStarted] = useState(false)
+  const [followUpInput, setFollowUpInput] = useState("")
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleStartChat = (e: React.FormEvent) => {
     e.preventDefault()
 
     const newErrors: {
@@ -45,21 +44,56 @@ export default function InputForm({ onSubmit, selectedPurpose }: InputFormProps)
     setErrors(newErrors)
 
     if (Object.keys(newErrors).length === 0) {
-      formRef.current?.submit()
-      setIsSubmitted(true)
-      onSubmit(e)
+      setChatStarted(true)
     }
+  }
+
+  const handleFollowUp = () => {
+    if (followUpInput.trim()) {
+      console.log("[v0] Follow-up message:", followUpInput)
+      setFollowUpInput("")
+    }
+  }
+
+  if (chatStarted) {
+    return (
+      <div className="bg-gray-900/50 rounded-2xl p-6 md:p-8 backdrop-blur-sm border border-gray-800 space-y-6">
+        <div className="bg-black/50 rounded-lg p-6 border border-gray-700 min-h-[300px]">
+          <p className="text-gray-300 leading-relaxed">
+            ここに歌詞が出力されます。ここに歌詞が出力されます。ここに歌詞が出力されます。ここに歌詞が出力されます。
+          </p>
+        </div>
+
+        <div className="space-y-3">
+          <label htmlFor="followUp" className="block text-sm font-medium">
+            追加の指示
+          </label>
+          <div className="flex gap-2">
+            <Input
+              id="followUp"
+              value={followUpInput}
+              onChange={(e) => setFollowUpInput(e.target.value)}
+              onKeyPress={(e) => e.key === "Enter" && handleFollowUp()}
+              placeholder="さらに指示を入力してください..."
+              className="bg-black/50 border-gray-700 focus:border-teal-400 transition-all"
+            />
+            <Button
+              onClick={handleFollowUp}
+              className="px-4 py-2 bg-gradient-to-r from-pink-500 via-teal-400 to-yellow-400 hover:opacity-90 transition-all"
+            >
+              <Send className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (
     <>
       <form
-        ref={formRef}
-        onSubmit={handleSubmit}
+        onSubmit={handleStartChat}
         className="bg-gray-900/50 rounded-2xl p-6 md:p-8 backdrop-blur-sm border border-gray-800"
-        action="https://docs.google.com/forms/u/0/d/e/1FAIpQLSfIeDV6G5U2U2zYGRCQNIa28zNtuEpn7lkiaa1H0b8F2_SAHw/formResponse"
-        method="post"
-        target="dummyIframe"
       >
         <h2 className="text-2xl md:text-3xl font-bold mb-6">
           {selectedPurpose === "gift"
@@ -68,13 +102,6 @@ export default function InputForm({ onSubmit, selectedPurpose }: InputFormProps)
               ? "あなたの気持ちを聞かせてください"
               : "詳細を入力してください"}
         </h2>
-        <input
-          type="text"
-          name="entry.769498571"
-          value={selectedPurpose ?? ""}
-          readOnly
-          className="hidden"
-        />
         <div className="space-y-6">
           <div className="space-y-2">
             <label htmlFor="worry" className="block text-sm font-medium">
@@ -219,19 +246,14 @@ export default function InputForm({ onSubmit, selectedPurpose }: InputFormProps)
               type="submit"
               className="w-full py-6 text-lg font-bold bg-gradient-to-r from-pink-500 via-teal-400 to-yellow-400 hover:opacity-90 hover:scale-[1.02] transition-all duration-300 cursor-pointer"
             >
-              AIと歌詞の作成を開始する
+              歌詞の作成を開始する
             </Button>
-
-            <div className={cn("mt-4 text-center text-sm", !isSubmitted && "hidden")}>
-              <p>入力した内容は正常に送信されました</p>
-            </div>
             <div className="mt-4 text-center text-sm text-gray-400">
               <p>Oto LinksはNPO法人OVAによって提供されている無料のサービスです。料金は一切かかりません</p>
             </div>
           </div>
         </div>
       </form>
-      <iframe name="dummyIframe" className="hidden" />
     </>
   )
 }
