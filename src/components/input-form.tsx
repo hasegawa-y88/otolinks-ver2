@@ -186,7 +186,7 @@ export default function InputForm({ onSubmit, selectedPurpose }: InputFormProps)
               <ol className="list-decimal pl-5 space-y-2">
                 <li>収集する情報：メールアドレス、お悩み内容、音楽の好みに関する情報</li>
                 <li>利用目的：AIによる音楽生成サービスの提供、サービス改善のための分析</li>
-                <li>第三者提供：法令に基��く場合を除き、お客様の同意なく第三者に提供することはありません</li>
+                <li>第三者提供：法令に基づく場合を除き、お客様の同意なく第三者に提供することはありません</li>
                 <li>お問い合わせ：otolinks@ova-japan.org</li>
               </ol>
             </div>
@@ -221,7 +221,7 @@ export default function InputForm({ onSubmit, selectedPurpose }: InputFormProps)
             >
               AIと歌詞の作成を開始する
             </Button>
-            
+
             <div className={cn("mt-4 text-center text-sm", !isSubmitted && "hidden")}>
               <p>入力した内容は正常に送信されました</p>
             </div>
