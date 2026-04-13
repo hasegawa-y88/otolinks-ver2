@@ -105,72 +105,75 @@ export default function InputForm({ onSubmit, selectedPurpose }: InputFormProps)
             {errors.worry && <p className="text-red-500 text-sm mt-1">{errors.worry}</p>}
           </div>
 
-          <div className="space-y-2">
-            <label htmlFor="favoriteSong" className="block text-sm font-medium">
-              {selectedPurpose === "gift"
-                ? "贈りたい相手が好きな曲"
-                : selectedPurpose === "self"
-                  ? "あなたが好きな曲"
-                  : "好きな曲"}
-            </label>
-            <Input
-              id="favoriteSong"
-              name="entry.787700534"
-              value={favoriteSong}
-              onChange={(e) => setFavoriteSong(e.target.value)}
-              placeholder="例：ボヘミアン・ラプソディ"
-              className="bg-black/50 border-gray-700 focus:border-teal-400 transition-all"
-            />
-          </div>
+          <div className="space-y-4">
+            <div>
+              <h3 className="text-sm font-medium mb-2">
+                {selectedPurpose === "gift"
+                  ? "どんな音楽を届けたいか、イメージを教えてください"
+                  : selectedPurpose === "self"
+                    ? "どんな音楽を作りたいか、イメージを教えてください"
+                    : "どんな音楽を届けたいか、イメージを教えてください"}
+              </h3>
+              <p className="text-xs text-gray-400">（特に思い浮かばない場合は、空欄のままでも大丈夫です。）</p>
+            </div>
 
-          <div className="space-y-2">
-            <label htmlFor="favoriteArtist" className="block text-sm font-medium">
-              {selectedPurpose === "gift"
-                ? "贈りたい相手が好きな歌手"
-                : selectedPurpose === "self"
-                  ? "あなたが好きな歌手"
-                  : "好きな歌手"}
-            </label>
-            <Input
-              id="favoriteArtist"
-              name="entry.787700535"
-              value={favoriteArtist}
-              onChange={(e) => setFavoriteArtist(e.target.value)}
-              placeholder="例：Queen、The Beatles"
-              className="bg-black/50 border-gray-700 focus:border-teal-400 transition-all"
-            />
-          </div>
+            <div className="space-y-4 pl-4">
+              <div className="space-y-2">
+                <label htmlFor="favoriteSong" className="block text-sm font-medium">
+                  参考にしたい曲
+                </label>
+                <Input
+                  id="favoriteSong"
+                  name="entry.787700534"
+                  value={favoriteSong}
+                  onChange={(e) => setFavoriteSong(e.target.value)}
+                  placeholder=""
+                  className="bg-black/50 border-gray-700 focus:border-teal-400 transition-all"
+                />
+              </div>
 
-          <div className="space-y-2">
-            <label htmlFor="favoriteGenre" className="block text-sm font-medium">
-              {selectedPurpose === "gift"
-                ? "贈りたい相手が好きな音楽ジャンル"
-                : selectedPurpose === "self"
-                  ? "あなたが好きな音楽ジャンル"
-                  : "好きな音楽ジャンル"}
-            </label>
-            <Input
-              id="favoriteGenre"
-              name="entry.787700536"
-              value={favoriteGenre}
-              onChange={(e) => setFavoriteGenre(e.target.value)}
-              placeholder="例：ロック、J-POP、クラシック"
-              className="bg-black/50 border-gray-700 focus:border-teal-400 transition-all"
-            />
-          </div>
+              <div className="space-y-2">
+                <label htmlFor="favoriteArtist" className="block text-sm font-medium">
+                  イメージに近いアーティスト
+                </label>
+                <Input
+                  id="favoriteArtist"
+                  name="entry.787700535"
+                  value={favoriteArtist}
+                  onChange={(e) => setFavoriteArtist(e.target.value)}
+                  placeholder=""
+                  className="bg-black/50 border-gray-700 focus:border-teal-400 transition-all"
+                />
+              </div>
 
-          <div className="space-y-2">
-            <label htmlFor="songMood" className="block text-sm font-medium">
-              曲の雰囲気
-            </label>
-            <Input
-              id="songMood"
-              name="entry.787700537"
-              value={songMood}
-              onChange={(e) => setSongMood(e.target.value)}
-              placeholder="例：明るい、悲しい、エネルギッシュ、落ち着いた"
-              className="bg-black/50 border-gray-700 focus:border-teal-400 transition-all"
-            />
+              <div className="space-y-2">
+                <label htmlFor="favoriteGenre" className="block text-sm font-medium">
+                  曲のジャンル
+                </label>
+                <Input
+                  id="favoriteGenre"
+                  name="entry.787700536"
+                  value={favoriteGenre}
+                  onChange={(e) => setFavoriteGenre(e.target.value)}
+                  placeholder="例：J-POP／ロック／バラード など"
+                  className="bg-black/50 border-gray-700 focus:border-teal-400 transition-all"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label htmlFor="songMood" className="block text-sm font-medium">
+                  曲の雰囲気
+                </label>
+                <Input
+                  id="songMood"
+                  name="entry.787700537"
+                  value={songMood}
+                  onChange={(e) => setSongMood(e.target.value)}
+                  placeholder="例：明るい／切ない／落ち着いた など"
+                  className="bg-black/50 border-gray-700 focus:border-teal-400 transition-all"
+                />
+              </div>
+            </div>
           </div>
 
           <div className="pt-4">
@@ -183,7 +186,7 @@ export default function InputForm({ onSubmit, selectedPurpose }: InputFormProps)
               <ol className="list-decimal pl-5 space-y-2">
                 <li>収集する情報：メールアドレス、お悩み内容、音楽の好みに関する情報</li>
                 <li>利用目的：AIによる音楽生成サービスの提供、サービス改善のための分析</li>
-                <li>第三者提供：法令に基づく場合を除き、お客様の同意なく第三者に提供することはありません</li>
+                <li>第三者提供：法令に基��く場合を除き、お客様の同意なく第三者に提供することはありません</li>
                 <li>お問い合わせ：otolinks@ova-japan.org</li>
               </ol>
             </div>
