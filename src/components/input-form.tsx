@@ -15,12 +15,13 @@ interface InputFormProps {
 }
 
 export default function InputForm({ onSubmit, selectedPurpose }: InputFormProps) {
-  const [email, setEmail] = useState("")
-  const [nameInput, setNameInput] = useState("")
   const [worry, setWorry] = useState("")
-  const [music, setMusic] = useState("")
+  const [favoriteSong, setFavoriteSong] = useState("")
+  const [favoriteArtist, setFavoriteArtist] = useState("")
+  const [favoriteGenre, setFavoriteGenre] = useState("")
+  const [songMood, setSongMood] = useState("")
   const [agreeToPolicy, setAgreeToPolicy] = useState(false)
-  const [errors, setErrors] = useState<{ email?: string; nameInput?: string; worry?: string; policy?: string }>({})
+  const [errors, setErrors] = useState<{ worry?: string; policy?: string }>({})
   const formRef = useRef<HTMLFormElement>(null)
 
   const [isSubmitted, setIsSubmitted] = useState(false)
@@ -29,21 +30,9 @@ export default function InputForm({ onSubmit, selectedPurpose }: InputFormProps)
     e.preventDefault()
 
     const newErrors: {
-      nameInput?: string
-      email?: string
       worry?: string
       policy?: string
     } = {}
-
-    if (!nameInput) {
-      newErrors.nameInput = "お名前を入力してください"
-    }
-
-    if (!email) {
-      newErrors.email = "メールアドレスを入力してください"
-    } else if (!/\S+@\S+\.\S+/.test(email)) {
-      newErrors.email = "有効なメールアドレスを入力してください"
-    }
 
     if (!worry) {
       newErrors.worry = "悩みを入力してください"
@@ -88,55 +77,6 @@ export default function InputForm({ onSubmit, selectedPurpose }: InputFormProps)
         />
         <div className="space-y-6">
           <div className="space-y-2">
-            <label htmlFor="email" className="block text-sm font-medium">
-              あなたのメールアドレス <span className="text-pink-500">*</span>
-            </label>
-            <div className="relative">
-              <Input
-                id="email"
-                name="entry.511433383"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="example@mail.com"
-                className={cn(
-                  "bg-black/50 border-gray-700 focus:border-teal-400 transition-all",
-                  errors.email ? "border-red-500" : "",
-                )}
-              />
-              {errors.email && (
-                <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                  <AlertCircle className="h-5 w-5 text-red-500" />
-                </div>
-              )}
-            </div>
-            {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
-          </div>
-          <div className="space-y-2">
-            <label htmlFor="nameInput" className="block text-sm font-medium">
-              あなたの名前 <span className="text-gray-400 text-xs">※仮名やニックネームでも可</span> <span className="text-pink-500">*</span>
-            </label>
-            <div className="relative">
-              <Input
-                id="nameInput"
-                name="entry.1769110912"
-                type="text"
-                value={nameInput}
-                onChange={(e) => setNameInput(e.target.value)}
-                className={cn(
-                  "bg-black/50 border-gray-700 focus:border-teal-400 transition-all",
-                  errors.nameInput ? "border-red-500" : "",
-                )}
-              />
-              {errors.nameInput && (
-                <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                  <AlertCircle className="h-5 w-5 text-red-500" />
-                </div>
-              )}
-            </div>
-            {errors.nameInput && <p className="text-red-500 text-sm mt-1">{errors.nameInput}</p>}
-          </div>
-          <div className="space-y-2">
             <label htmlFor="worry" className="block text-sm font-medium">
               {selectedPurpose === "gift"
                 ? "贈りたい相手の悩み"
@@ -166,19 +106,69 @@ export default function InputForm({ onSubmit, selectedPurpose }: InputFormProps)
           </div>
 
           <div className="space-y-2">
-            <label htmlFor="music" className="block text-sm font-medium">
+            <label htmlFor="favoriteSong" className="block text-sm font-medium">
               {selectedPurpose === "gift"
-                ? "贈りたい相手が好きな 曲／歌手／音楽ジャンル"
+                ? "贈りたい相手が好きな曲"
                 : selectedPurpose === "self"
-                  ? "あなたが好きな 曲／歌手／音楽ジャンル"
-                  : "好きな 曲／歌手／音楽ジャンル"}
+                  ? "あなたが好きな曲"
+                  : "好きな曲"}
             </label>
             <Input
-              id="music"
+              id="favoriteSong"
               name="entry.787700534"
-              value={music}
-              onChange={(e) => setMusic(e.target.value)}
-              placeholder="ここに記入したものに寄せた音楽を作成します。特に希望が無ければ空欄のままで大丈夫です。"
+              value={favoriteSong}
+              onChange={(e) => setFavoriteSong(e.target.value)}
+              placeholder="例：ボヘミアン・ラプソディ"
+              className="bg-black/50 border-gray-700 focus:border-teal-400 transition-all"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <label htmlFor="favoriteArtist" className="block text-sm font-medium">
+              {selectedPurpose === "gift"
+                ? "贈りたい相手が好きな歌手"
+                : selectedPurpose === "self"
+                  ? "あなたが好きな歌手"
+                  : "好きな歌手"}
+            </label>
+            <Input
+              id="favoriteArtist"
+              name="entry.787700535"
+              value={favoriteArtist}
+              onChange={(e) => setFavoriteArtist(e.target.value)}
+              placeholder="例：Queen、The Beatles"
+              className="bg-black/50 border-gray-700 focus:border-teal-400 transition-all"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <label htmlFor="favoriteGenre" className="block text-sm font-medium">
+              {selectedPurpose === "gift"
+                ? "贈りたい相手が好きな音楽ジャンル"
+                : selectedPurpose === "self"
+                  ? "あなたが好きな音楽ジャンル"
+                  : "好きな音楽ジャンル"}
+            </label>
+            <Input
+              id="favoriteGenre"
+              name="entry.787700536"
+              value={favoriteGenre}
+              onChange={(e) => setFavoriteGenre(e.target.value)}
+              placeholder="例：ロック、J-POP、クラシック"
+              className="bg-black/50 border-gray-700 focus:border-teal-400 transition-all"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <label htmlFor="songMood" className="block text-sm font-medium">
+              曲の雰囲気
+            </label>
+            <Input
+              id="songMood"
+              name="entry.787700537"
+              value={songMood}
+              onChange={(e) => setSongMood(e.target.value)}
+              placeholder="例：明るい、悲しい、エネルギッシュ、落ち着いた"
               className="bg-black/50 border-gray-700 focus:border-teal-400 transition-all"
             />
           </div>
@@ -226,7 +216,7 @@ export default function InputForm({ onSubmit, selectedPurpose }: InputFormProps)
               type="submit"
               className="w-full py-6 text-lg font-bold bg-gradient-to-r from-pink-500 via-teal-400 to-yellow-400 hover:opacity-90 hover:scale-[1.02] transition-all duration-300 cursor-pointer"
             >
-              送信する
+              AIと歌詞の作成を開始する
             </Button>
             
             <div className={cn("mt-4 text-center text-sm", !isSubmitted && "hidden")}>
