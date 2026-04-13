@@ -24,7 +24,12 @@ export default function InputForm({ selectedPurpose, onChatStart, chatStarted }:
   const [agreeToPolicy, setAgreeToPolicy] = useState(false)
   const [errors, setErrors] = useState<{ worry?: string; policy?: string }>({})
   const [followUpInput, setFollowUpInput] = useState("")
-  const [chatMessages, setChatMessages] = useState<Array<{ role: "user" | "ai"; content: string }>>([])
+  const [chatMessages, setChatMessages] = useState<Array<{ role: "user" | "ai"; content: string }>>([
+    {
+      role: "ai",
+      content: "ここに歌詞が出力されます。ここに歌詞が出力されます。ここに歌詞が出力されます。ここに歌詞が出力されます。",
+    },
+  ])
 
   const handleStartChat = (e: React.FormEvent) => {
     e.preventDefault()
@@ -127,7 +132,7 @@ export default function InputForm({ selectedPurpose, onChatStart, chatStarted }:
 
             <div className="space-y-4 pl-4">
               <div className="space-y-2">
-                <label htmlFor="favoriteSong" className={cn("block text-sm font-medium", chatStarted ? "cursor-not-allowed" : "")}>
+                <label htmlFor="favoriteSong" className="block text-sm font-medium">
                   参考にしたい曲
                 </label>
                 <Input
@@ -142,7 +147,7 @@ export default function InputForm({ selectedPurpose, onChatStart, chatStarted }:
               </div>
 
               <div className="space-y-2">
-                <label htmlFor="favoriteArtist" className={cn("block text-sm font-medium", chatStarted ? "cursor-not-allowed" : "")}>
+                <label htmlFor="favoriteArtist" className="block text-sm font-medium">
                   イメージに近いアーティスト
                 </label>
                 <Input
@@ -157,7 +162,7 @@ export default function InputForm({ selectedPurpose, onChatStart, chatStarted }:
               </div>
 
               <div className="space-y-2">
-                <label htmlFor="favoriteGenre" className={cn("block text-sm font-medium", chatStarted ? "cursor-not-allowed" : "")}>
+                <label htmlFor="favoriteGenre" className="block text-sm font-medium">
                   曲のジャンル
                 </label>
                 <Input
@@ -172,7 +177,7 @@ export default function InputForm({ selectedPurpose, onChatStart, chatStarted }:
               </div>
 
               <div className="space-y-2">
-                <label htmlFor="songMood" className={cn("block text-sm font-medium", chatStarted ? "cursor-not-allowed" : "")}>
+                <label htmlFor="songMood" className="block text-sm font-medium">
                   曲の雰囲気
                 </label>
                 <Input
@@ -245,10 +250,6 @@ export default function InputForm({ selectedPurpose, onChatStart, chatStarted }:
       {chatStarted && (
         <div className="mt-6 bg-gray-900/50 rounded-2xl p-6 md:p-8 backdrop-blur-sm border border-gray-800 space-y-6">
           <div className="bg-black/50 rounded-lg p-6 border border-gray-700 min-h-[300px] flex flex-col space-y-4 overflow-y-auto">
-            <div className="text-gray-300 leading-relaxed">
-              <p>ここに歌詞が出力されます。ここに歌詞が出力されます。ここに歌詞が出力されます。ここに歌詞が出力されます。</p>
-            </div>
-
             {chatMessages.map((message, index) => (
               <div
                 key={index}
