@@ -29,11 +29,6 @@ export default function Home() {
           </>
         )}
         <InputForm selectedPurpose={selectedPurpose} onChatStart={setChatStarted} />
-        {!chatStarted && (
-          <div className="mt-16 mb-12">
-            <ProcessFlow />
-          </div>
-        )}
         <Footer />
       </div>
     </main>
