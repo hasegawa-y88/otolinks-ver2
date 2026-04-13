@@ -59,7 +59,7 @@ export default function InputForm({ selectedPurpose, onChatStart, chatStarted }:
       const userMessage = followUpInput.trim()
       setChatMessages((prev) => [...prev, { role: "user", content: userMessage }])
       setFollowUpInput("")
-      
+
       // Simulate AI response
       setTimeout(() => {
         setChatMessages((prev) => [
@@ -142,7 +142,7 @@ export default function InputForm({ selectedPurpose, onChatStart, chatStarted }:
                   onChange={(e) => setFavoriteSong(e.target.value)}
                   disabled={chatStarted}
                   placeholder=""
-                  className={cn("bg-black/50 border-gray-700 focus:border-teal-400 transition-all", chatStarted ? "opacity-70 cursor-not-allowed" : "")}
+                  className={cn("bg-black/50 border-gray-700 focus:border-teal-400 transition-all", chatStarted ? "opacity-70 cursor-not-allowed disabled:pointer-events-auto" : "")}
                 />
               </div>
 
@@ -157,7 +157,7 @@ export default function InputForm({ selectedPurpose, onChatStart, chatStarted }:
                   onChange={(e) => setFavoriteArtist(e.target.value)}
                   disabled={chatStarted}
                   placeholder=""
-                  className={cn("bg-black/50 border-gray-700 focus:border-teal-400 transition-all", chatStarted ? "opacity-70 cursor-not-allowed" : "")}
+                  className={cn("bg-black/50 border-gray-700 focus:border-teal-400 transition-all", chatStarted ? "opacity-70 cursor-not-allowed disabled:pointer-events-auto" : "")}
                 />
               </div>
 
@@ -172,7 +172,7 @@ export default function InputForm({ selectedPurpose, onChatStart, chatStarted }:
                   onChange={(e) => setFavoriteGenre(e.target.value)}
                   disabled={chatStarted}
                   placeholder="例：J-POP／ロック／バラード など"
-                  className={cn("bg-black/50 border-gray-700 focus:border-teal-400 transition-all", chatStarted ? "opacity-70 cursor-not-allowed" : "")}
+                  className={cn("bg-black/50 border-gray-700 focus:border-teal-400 transition-all", chatStarted ? "opacity-70 cursor-not-allowed disabled:pointer-events-auto" : "")}
                 />
               </div>
 
@@ -187,7 +187,7 @@ export default function InputForm({ selectedPurpose, onChatStart, chatStarted }:
                   onChange={(e) => setSongMood(e.target.value)}
                   disabled={chatStarted}
                   placeholder="例：明るい／切ない／落ち着いた など"
-                  className={cn("bg-black/50 border-gray-700 focus:border-teal-400 transition-all", chatStarted ? "opacity-70 cursor-not-allowed" : "")}
+                  className={cn("bg-black/50 border-gray-700 focus:border-teal-400 transition-all", chatStarted ? "opacity-70 cursor-not-allowed disabled:pointer-events-auto" : "")}
                 />
               </div>
             </div>
