@@ -11,9 +11,10 @@ import { Checkbox } from "@/components/ui/checkbox"
 
 interface InputFormProps {
   selectedPurpose: string | null
+  onChatStart: (started: boolean) => void
 }
 
-export default function InputForm({ selectedPurpose }: InputFormProps) {
+export default function InputForm({ selectedPurpose, onChatStart }: InputFormProps) {
   const [worry, setWorry] = useState("")
   const [favoriteSong, setFavoriteSong] = useState("")
   const [favoriteArtist, setFavoriteArtist] = useState("")
@@ -45,6 +46,7 @@ export default function InputForm({ selectedPurpose }: InputFormProps) {
 
     if (Object.keys(newErrors).length === 0) {
       setChatStarted(true)
+      onChatStart(true)
     }
   }
 
