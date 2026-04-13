@@ -19,15 +19,15 @@ export default function Home() {
         <div className="mb-8">
           <Logo />
         </div>
-        {!chatStarted && (
-          <>
-            <HeroSection />
-            <div className="mt-12 mb-8">
-              <h2 className="text-2xl md:text-3xl font-bold mb-6 text-center">あなたの目的を選んでください</h2>
-              <PurposeCards selectedPurpose={selectedPurpose} setSelectedPurpose={setSelectedPurpose} />
-            </div>
-          </>
-        )}
+        <HeroSection />
+        <div className="mt-12 mb-8">
+          <h2 className="text-2xl md:text-3xl font-bold mb-6 text-center">あなたの目的を選んでください</h2>
+          <PurposeCards selectedPurpose={selectedPurpose} setSelectedPurpose={setSelectedPurpose} disabled={chatStarted} />
+        </div>
+        <InputForm selectedPurpose={selectedPurpose} onChatStart={setChatStarted} chatStarted={chatStarted} />
+        <div className="mt-16 mb-12">
+          <ProcessFlow />
+        </div>
         <InputForm selectedPurpose={selectedPurpose} onChatStart={setChatStarted} />
         <Footer />
       </div>

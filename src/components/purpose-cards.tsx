@@ -6,9 +6,10 @@ import { cn } from "@/lib/utils"
 interface PurposeCardsProps {
   selectedPurpose: string | null
   setSelectedPurpose: (purpose: string) => void
+  disabled?: boolean
 }
 
-export default function PurposeCards({ selectedPurpose, setSelectedPurpose }: PurposeCardsProps) {
+export default function PurposeCards({ selectedPurpose, setSelectedPurpose, disabled = false }: PurposeCardsProps) {
   const purposes = [
     {
       id: "gift",
@@ -31,9 +32,10 @@ export default function PurposeCards({ selectedPurpose, setSelectedPurpose }: Pu
       {purposes.map((purpose) => (
         <div
           key={purpose.id}
-          onClick={() => setSelectedPurpose(purpose.id)}
+          onClick={() => !disabled && setSelectedPurpose(purpose.id)}
           className={cn(
-            "p-6 rounded-xl cursor-pointer transition-all duration-300 border-2 flex flex-col items-center text-center",
+            "p-6 rounded-xl transition-all duration-300 border-2 flex flex-col items-center text-center",
+            disabled ? "cursor-not-allowed opacity-70" : "cursor-pointer",
             selectedPurpose === purpose.id
               ? `border-transparent bg-gradient-to-r ${purpose.color} shadow-lg scale-[1.02]`
               : "border-gray-700 hover:border-gray-500 bg-black/40",
