@@ -434,7 +434,7 @@ export default function InputForm({ selectedPurpose, onChatStart, chatStarted }:
               <div className="flex gap-3">
                 <Button
                   onClick={() => setShowResetModal(false)}
-                  className="flex-1 px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-200 border border-gray-700 rounded-md transition-all"
+                  className="flex-1 px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-200 border border-gray-700 rounded-md transition-all hover:cursor-pointer"
                 >
                   キャンセル
                 </Button>
