@@ -122,10 +122,10 @@ export default function InputForm({ selectedPurpose, onChatStart, chatStarted }:
             <div>
               <h3 className="text-sm font-medium mb-2">
                 {selectedPurpose === "gift"
-                  ? "どんな音楽を届けたいか、イメージを教えてください"
+                  ? "どんな音楽を贈りたいか、イメージを教えてください"
                   : selectedPurpose === "self"
                     ? "どんな音楽を作りたいか、イメージを教えてください"
-                    : "どんな音楽を届けたいか、イメージを教えてください"}
+                    : "どんな音楽を贈りたいか、イメージを教えてください"}
               </h3>
               <p className="text-xs text-gray-400">（特に思い浮かばない場合は、空欄のままでも大丈夫です。）</p>
             </div>
@@ -133,7 +133,7 @@ export default function InputForm({ selectedPurpose, onChatStart, chatStarted }:
             <div className="space-y-4 pl-4">
               <div className="space-y-2">
                 <label htmlFor="favoriteSong" className="block text-sm font-medium">
-                  参考にしたい曲
+                  参考にしたい曲の曲名
                 </label>
                 <Input
                   id="favoriteSong"
@@ -163,7 +163,11 @@ export default function InputForm({ selectedPurpose, onChatStart, chatStarted }:
 
               <div className="space-y-2">
                 <label htmlFor="favoriteGenre" className="block text-sm font-medium">
-                  曲のジャンル
+                  {selectedPurpose === "gift"
+                    ? "贈りたい曲のジャンル"
+                    : selectedPurpose === "self"
+                      ? "作りたい曲のジャンル"
+                      : "贈りたい曲のジャンル"}
                 </label>
                 <Input
                   id="favoriteGenre"
@@ -178,7 +182,11 @@ export default function InputForm({ selectedPurpose, onChatStart, chatStarted }:
 
               <div className="space-y-2">
                 <label htmlFor="songMood" className="block text-sm font-medium">
-                  曲の雰囲気
+                  {selectedPurpose === "gift"
+                    ? "贈りたい曲の雰囲気"
+                    : selectedPurpose === "self"
+                      ? "作りたい曲の雰囲気"
+                      : "贈りたい曲の雰囲気"}
                 </label>
                 <Input
                   id="songMood"
