@@ -31,6 +31,11 @@ interface ApiResponse {
   analysis?: string
 }
 
+const extractSections = (lyrics: string): string[] => {
+  const matches = lyrics.match(/\[[^\]]+\]/g) || []
+  return matches
+}
+
 export default function InputForm({ selectedPurpose, onChatStart, chatStarted }: InputFormProps) {
   const [worry, setWorry] = useState("")
   const [favoriteSong, setFavoriteSong] = useState("")
@@ -46,6 +51,8 @@ export default function InputForm({ selectedPurpose, onChatStart, chatStarted }:
   const [analysisData, setAnalysisData] = useState<string | null>(null)
   const [instructionHistory, setInstructionHistory] = useState<string[]>([])
   const [currentLyrics, setCurrentLyrics] = useState<string>("")
+  const [availableSections, setAvailableSections] = useState<string[]>([])
+  const [selectedSection, setSelectedSection] = useState<string>("全体を修正する")
 
   const handleStartChat = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -104,6 +111,10 @@ export default function InputForm({ selectedPurpose, onChatStart, chatStarted }:
         ])
 
         setCurrentLyrics(data.lyrics)
+        const sections = extractSections(data.lyrics)
+        setAvailableSections(sections)
+        setSelectedSection("全体を修正する")
+        
         if (data.analysis) {
           setAnalysisData(data.analysis)
         }
@@ -138,14 +149,18 @@ export default function InputForm({ selectedPurpose, onChatStart, chatStarted }:
       setErrorMessage(null)
 
       try {
+        const isFullEdit = selectedSection === "全体を修正する"
+        const targetSection = isFullEdit ? "" : selectedSection
+        const mode = isFullEdit ? "full" : "section"
+
         const requestBody = {
           problem: worry,
           genre: favoriteGenre,
           mood: songMood,
           analysis: analysisData || "",
           lyrics: currentLyrics,
-          mode: "full",
-          target_section: "",
+          mode,
+          target_section: targetSection,
           instruction: userMessage,
           instruction_history: instructionHistory,
         }
@@ -176,6 +191,10 @@ export default function InputForm({ selectedPurpose, onChatStart, chatStarted }:
         ])
 
         setCurrentLyrics(data.lyrics)
+        const sections = extractSections(data.lyrics)
+        setAvailableSections(sections)
+        setSelectedSection("全体を修正する")
+        
         if (data.analysis) {
           setAnalysisData(data.analysis)
         }
@@ -418,6 +437,24 @@ export default function InputForm({ selectedPurpose, onChatStart, chatStarted }:
           </div>
 
           <div className="space-y-3">
+            <div>
+              <label className="block text-sm font-medium mb-2">
+                修正したいセクションを選択
+              </label>
+              <select
+                value={selectedSection}
+                onChange={(e) => setSelectedSection(e.target.value)}
+                className="w-full bg-black/50 border border-gray-700 rounded-md px-3 py-2 text-gray-200 focus:border-teal-400 focus:outline-none transition-all"
+              >
+                <option value="全体を修正する">全体を修正する</option>
+                {availableSections.map((section) => (
+                  <option key={section} value={section}>
+                    {section}
+                  </option>
+                ))}
+              </select>
+            </div>
+
             <label htmlFor="followUp" className="block text-sm font-medium">
               追加の指示
             </label>
