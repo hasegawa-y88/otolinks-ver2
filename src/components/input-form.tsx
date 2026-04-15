@@ -5,14 +5,27 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
-import { AlertCircle, Send } from "lucide-react"
+import { AlertCircle, Send, Loader } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Checkbox } from "@/components/ui/checkbox"
+
+const API_ENDPOINT =
+  "https://otolinks-functions-ffg4e2bqa0byd6c2.japaneast-01.azurewebsites.net/api/generate_lyrics?code=ZYRBr3JNXRX89GQwTN6EXihiKiiV0f5LKx43QGuRBCrZAzFuu1X-rQ%3D%3D"
 
 interface InputFormProps {
   selectedPurpose: string | null
   onChatStart: (started: boolean) => void
   chatStarted: boolean
+}
+
+interface ChatMessage {
+  role: "user" | "ai"
+  content: string
+}
+
+interface ApiResponse {
+  lyrics: string
+  analysis?: string
 }
 
 export default function InputForm({ selectedPurpose, onChatStart, chatStarted }: InputFormProps) {
@@ -24,14 +37,12 @@ export default function InputForm({ selectedPurpose, onChatStart, chatStarted }:
   const [agreeToPolicy, setAgreeToPolicy] = useState(false)
   const [errors, setErrors] = useState<{ worry?: string; policy?: string }>({})
   const [followUpInput, setFollowUpInput] = useState("")
-  const [chatMessages, setChatMessages] = useState<Array<{ role: "user" | "ai"; content: string }>>([
-    {
-      role: "ai",
-      content: "ここに歌詞が出力されます。ここに歌詞が出力されます。ここに歌詞が出力されます。ここに歌詞が出力されます。",
-    },
-  ])
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([])
+  const [isLoading, setIsLoading] = useState(false)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const [analysisData, setAnalysisData] = useState<string | null>(null)
 
-  const handleStartChat = (e: React.FormEvent) => {
+  const handleStartChat = async (e: React.FormEvent) => {
     e.preventDefault()
 
     const newErrors: {
@@ -51,6 +62,59 @@ export default function InputForm({ selectedPurpose, onChatStart, chatStarted }:
 
     if (Object.keys(newErrors).length === 0) {
       onChatStart(true)
+      setErrorMessage(null)
+      setIsLoading(true)
+
+      try {
+        const requestBody = {
+          song: favoriteSong || "",
+          artist: favoriteArtist || "",
+          genre: favoriteGenre || "",
+          mood: songMood || "",
+          problem: worry,
+        }
+
+        console.log("[v0] Sending request to Azure Functions:", requestBody)
+
+        const response = await fetch(API_ENDPOINT, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(requestBody),
+        })
+
+        if (!response.ok) {
+          throw new Error(`API Error: ${response.status} ${response.statusText}`)
+        }
+
+        const data: ApiResponse = await response.json()
+        console.log("[v0] API Response received:", data)
+
+        setChatMessages([
+          {
+            role: "ai",
+            content: data.lyrics,
+          },
+        ])
+
+        if (data.analysis) {
+          setAnalysisData(data.analysis)
+        }
+      } catch (error) {
+        console.error("[v0] API Error:", error)
+        const errorMsg =
+          error instanceof Error ? error.message : "歌詞の生成に失敗しました。もう一度お試しください。"
+        setErrorMessage(errorMsg)
+        setChatMessages([
+          {
+            role: "ai",
+            content: `申し訳ありません。エラーが発生しました: ${errorMsg}`,
+          },
+        ])
+      } finally {
+        setIsLoading(false)
+      }
     }
   }
 
@@ -257,6 +321,19 @@ export default function InputForm({ selectedPurpose, onChatStart, chatStarted }:
 
       {chatStarted && (
         <div className="mt-6 bg-gray-900/50 rounded-2xl p-6 md:p-8 backdrop-blur-sm border border-gray-800 space-y-6">
+          {isLoading && (
+            <div className="flex items-center justify-center gap-2 py-8">
+              <Loader className="h-5 w-5 animate-spin text-teal-400" />
+              <span className="text-gray-300">生成中...</span>
+            </div>
+          )}
+
+          {errorMessage && (
+            <div className="bg-red-500/10 border border-red-500/50 rounded-lg p-4">
+              <p className="text-red-400 text-sm">{errorMessage}</p>
+            </div>
+          )}
+
           <div className="bg-black/50 rounded-lg p-6 border border-gray-700 min-h-[300px] flex flex-col space-y-4 overflow-y-auto">
             {chatMessages.map((message, index) => (
               <div
