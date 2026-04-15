@@ -5,7 +5,7 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
-import { AlertCircle, Send, Loader } from "lucide-react"
+import { AlertCircle, Send, Loader, RotateCcw, X } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Checkbox } from "@/components/ui/checkbox"
 
@@ -53,6 +53,7 @@ export default function InputForm({ selectedPurpose, onChatStart, chatStarted }:
   const [currentLyrics, setCurrentLyrics] = useState<string>("")
   const [availableSections, setAvailableSections] = useState<string[]>([])
   const [selectedSection, setSelectedSection] = useState<string>("全体を修正する")
+  const [showResetModal, setShowResetModal] = useState(false)
 
   const handleStartChat = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -133,6 +134,22 @@ export default function InputForm({ selectedPurpose, onChatStart, chatStarted }:
         setIsLoading(false)
       }
     }
+  }
+
+  const handleReset = () => {
+    // Reset chat-related states
+    setChatMessages([])
+    setCurrentLyrics("")
+    setAnalysisData(null)
+    setAvailableSections([])
+    setSelectedSection("全体を修正する")
+    setInstructionHistory([])
+    setFollowUpInput("")
+    setErrorMessage(null)
+    
+    // Notify parent to reset chat state
+    onChatStart(false)
+    setShowResetModal(false)
   }
 
   const handleFollowUp = async () => {
@@ -227,7 +244,7 @@ export default function InputForm({ selectedPurpose, onChatStart, chatStarted }:
             ? "贈りたい相手のことを教えてください"
             : selectedPurpose === "self"
               ? "あなたの気持ちを聞かせてください"
-              : "詳細を入力してください"}
+              : "詳細を入力��てください"}
         </h2>
         <div className="space-y-6">
           <div className="space-y-2">
@@ -398,6 +415,41 @@ export default function InputForm({ selectedPurpose, onChatStart, chatStarted }:
         </div>
       </form>
 
+      {showResetModal && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 md:p-8 max-w-md w-full animate-in fade-in slide-in-from-bottom-4 duration-300">
+            <div className="flex justify-end">
+              <button
+                onClick={() => setShowResetModal(false)}
+                className="h-8 w-8 rounded-full hover:bg-gray-800 flex items-center justify-center transition-all cursor-pointer"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="text-center">
+              <h2 className="text-xl font-bold mb-4">確認</h2>
+              <p className="text-gray-300 mb-6">今まで作成した歌詞が削除されますがよろしいですか？</p>
+
+              <div className="flex gap-3">
+                <Button
+                  onClick={() => setShowResetModal(false)}
+                  className="flex-1 px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-200 border border-gray-700 rounded-md transition-all"
+                >
+                  キャンセル
+                </Button>
+                <Button
+                  onClick={handleReset}
+                  className="flex-1 px-4 py-2 bg-gradient-to-r from-pink-500 via-teal-400 to-yellow-400 hover:opacity-90 transition-all"
+                >
+                  削除する
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {chatStarted && (
         <div className="mt-6 bg-gray-900/50 rounded-2xl p-6 md:p-8 backdrop-blur-sm border border-gray-800 space-y-6">
           {isLoading && (
@@ -437,6 +489,14 @@ export default function InputForm({ selectedPurpose, onChatStart, chatStarted }:
           </div>
 
           <div className="space-y-3">
+            <Button
+              onClick={() => setShowResetModal(true)}
+              className="w-full px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-200 border border-gray-700 rounded-md transition-all hover:cursor-pointer flex items-center justify-center gap-2"
+            >
+              <RotateCcw className="h-4 w-4" />
+              最初からやり直す
+            </Button>
+
             <div>
               <label className="block text-sm font-medium mb-2">
                 修正したいセクションを選択
