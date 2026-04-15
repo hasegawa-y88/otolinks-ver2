@@ -9,8 +9,11 @@ import { AlertCircle, Send, Loader } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Checkbox } from "@/components/ui/checkbox"
 
-const API_ENDPOINT =
+const GENERATE_LYRICS_ENDPOINT =
   "https://otolinks-functions-ffg4e2bqa0byd6c2.japaneast-01.azurewebsites.net/api/generate_lyrics?code=ZYRBr3JNXRX89GQwTN6EXihiKiiV0f5LKx43QGuRBCrZAzFuu1X-rQ%3D%3D"
+
+const EDIT_LYRICS_ENDPOINT =
+  "https://otolinks-functions-ffg4e2bqa0byd6c2.japaneast-01.azurewebsites.net/api/edit_lyrics?code=ns7I4qeGzFFThvJfsxhBQdAGnYpoCNTeVFR_8jEMrojAAzFurMOwfA%3D%3D"
 
 interface InputFormProps {
   selectedPurpose: string | null
@@ -41,6 +44,8 @@ export default function InputForm({ selectedPurpose, onChatStart, chatStarted }:
   const [isLoading, setIsLoading] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [analysisData, setAnalysisData] = useState<string | null>(null)
+  const [instructionHistory, setInstructionHistory] = useState<string[]>([])
+  const [currentLyrics, setCurrentLyrics] = useState<string>("")
 
   const handleStartChat = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -76,7 +81,7 @@ export default function InputForm({ selectedPurpose, onChatStart, chatStarted }:
 
         console.log("[v0] Sending request to Azure Functions:", requestBody)
 
-        const response = await fetch(API_ENDPOINT, {
+        const response = await fetch(GENERATE_LYRICS_ENDPOINT, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -98,6 +103,7 @@ export default function InputForm({ selectedPurpose, onChatStart, chatStarted }:
           },
         ])
 
+        setCurrentLyrics(data.lyrics)
         if (data.analysis) {
           setAnalysisData(data.analysis)
         }
@@ -118,22 +124,76 @@ export default function InputForm({ selectedPurpose, onChatStart, chatStarted }:
     }
   }
 
-  const handleFollowUp = () => {
+  const handleFollowUp = async () => {
     if (followUpInput.trim()) {
       const userMessage = followUpInput.trim()
       setChatMessages((prev) => [...prev, { role: "user", content: userMessage }])
+      
+      // Update instruction history for next call
+      const newHistory = [...instructionHistory, userMessage]
+      setInstructionHistory(newHistory)
+      
       setFollowUpInput("")
+      setIsLoading(true)
+      setErrorMessage(null)
 
-      // Simulate AI response
-      setTimeout(() => {
+      try {
+        const requestBody = {
+          problem: worry,
+          genre: favoriteGenre,
+          mood: songMood,
+          analysis: analysisData || "",
+          lyrics: currentLyrics,
+          mode: "full",
+          target_section: "",
+          instruction: userMessage,
+          instruction_history: instructionHistory,
+        }
+
+        console.log("[v0] Sending edit request:", requestBody)
+
+        const response = await fetch(EDIT_LYRICS_ENDPOINT, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(requestBody),
+        })
+
+        if (!response.ok) {
+          throw new Error(`API Error: ${response.status} ${response.statusText}`)
+        }
+
+        const data: ApiResponse = await response.json()
+        console.log("[v0] Edit API Response received:", data)
+
         setChatMessages((prev) => [
           ...prev,
           {
             role: "ai",
-            content: "ここに歌詞が出力されます。ここに歌詞が出力されます。ここに歌詞が出力されます。ここに歌詞が出力されます。",
+            content: data.lyrics,
           },
         ])
-      }, 500)
+
+        setCurrentLyrics(data.lyrics)
+        if (data.analysis) {
+          setAnalysisData(data.analysis)
+        }
+      } catch (error) {
+        console.error("[v0] Edit API Error:", error)
+        const errorMsg =
+          error instanceof Error ? error.message : "歌詞の編集に失敗しました。もう一度お試しください。"
+        setErrorMessage(errorMsg)
+        setChatMessages((prev) => [
+          ...prev,
+          {
+            role: "ai",
+            content: `申し訳ありません。エラーが発生しました: ${errorMsg}`,
+          },
+        ])
+      } finally {
+        setIsLoading(false)
+      }
     }
   }
 
