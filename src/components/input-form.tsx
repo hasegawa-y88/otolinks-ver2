@@ -115,7 +115,7 @@ export default function InputForm({ selectedPurpose, onChatStart, chatStarted }:
         const sections = extractSections(data.lyrics)
         setAvailableSections(sections)
         setSelectedSection("全体を修正する")
-        
+
         if (data.analysis) {
           setAnalysisData(data.analysis)
         }
@@ -146,7 +146,7 @@ export default function InputForm({ selectedPurpose, onChatStart, chatStarted }:
     setInstructionHistory([])
     setFollowUpInput("")
     setErrorMessage(null)
-    
+
     // Notify parent to reset chat state
     onChatStart(false)
     setShowResetModal(false)
@@ -156,11 +156,11 @@ export default function InputForm({ selectedPurpose, onChatStart, chatStarted }:
     if (followUpInput.trim()) {
       const userMessage = followUpInput.trim()
       setChatMessages((prev) => [...prev, { role: "user", content: userMessage }])
-      
+
       // Update instruction history for next call
       const newHistory = [...instructionHistory, userMessage]
       setInstructionHistory(newHistory)
-      
+
       setFollowUpInput("")
       setIsLoading(true)
       setErrorMessage(null)
@@ -211,7 +211,7 @@ export default function InputForm({ selectedPurpose, onChatStart, chatStarted }:
         const sections = extractSections(data.lyrics)
         setAvailableSections(sections)
         setSelectedSection("全体を修正する")
-        
+
         if (data.analysis) {
           setAnalysisData(data.analysis)
         }
@@ -440,7 +440,7 @@ export default function InputForm({ selectedPurpose, onChatStart, chatStarted }:
                 </Button>
                 <Button
                   onClick={handleReset}
-                  className="flex-1 px-4 py-2 bg-gradient-to-r from-pink-500 via-teal-400 to-yellow-400 hover:opacity-90 transition-all"
+                  className="flex-1 px-4 py-2 bg-gradient-to-r from-pink-500 via-teal-400 to-yellow-400 hover:opacity-90 transition-all hover:cursor-pointer"
                 >
                   削除する
                 </Button>
