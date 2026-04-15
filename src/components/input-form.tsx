@@ -345,7 +345,7 @@ export default function InputForm({ selectedPurpose, onChatStart, chatStarted }:
               >
                 <div
                   className={cn(
-                    "max-w-xs lg:max-w-md px-4 py-2 rounded-lg",
+                    "max-w-xs lg:max-w-md px-4 py-2 rounded-lg whitespace-pre-wrap",
                     message.role === "user"
                       ? "bg-teal-500/30 text-gray-200 border border-teal-400/50"
                       : "bg-gray-800/50 text-gray-300 border border-gray-700"
