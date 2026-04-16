@@ -32,7 +32,7 @@ interface ApiResponse {
 }
 
 const extractSections = (lyrics: string): string[] => {
-  const matches = lyrics.match(/[[^]]+]/g) || []
+  const matches = lyrics.match(/\[[^\]]+\]/g) || []
   return matches
 }
 
@@ -50,9 +50,9 @@ export default function InputForm({ selectedPurpose, onChatStart, chatStarted }:
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [analysisData, setAnalysisData] = useState<string | null>(null)
   const [instructionHistory, setInstructionHistory] = useState<string[]>([])
-  const [currentLyrics, setCurrentLyrics] = useState("")
+  const [currentLyrics, setCurrentLyrics] = useState<string>("")
   const [availableSections, setAvailableSections] = useState<string[]>([])
-  const [selectedSection, setSelectedSection] = useState("全体を修正する")
+  const [selectedSection, setSelectedSection] = useState<string>("全体を修正する")
   const [showResetModal, setShowResetModal] = useState(false)
 
   const handleStartChat = async (e: React.FormEvent) => {
@@ -101,73 +101,23 @@ export default function InputForm({ selectedPurpose, onChatStart, chatStarted }:
           throw new Error(`API Error: ${response.status} ${response.statusText}`)
         }
 
-        // ★追加（nullチェック）
-        if (!response.body) {
-          throw new Error("Response body is not readable")
-        }
+        const data: ApiResponse = await response.json()
+        console.log("[v0] API Response received:", data)
 
-        let accumulatedLyrics = ""
-        let analysisResult = ""
+        setChatMessages([
+          {
+            role: "ai",
+            content: data.lyrics,
+          },
+        ])
 
-        const reader = response.body.getReader()
-        const decoder = new TextDecoder()
-
-        let buffer = ""
-
-        while (true) {
-          const { done, value } = await reader.read()
-          if (done) break
-
-          buffer += decoder.decode(value, { stream: true })
-
-          let boundaryIndex
-
-          while ((boundaryIndex = buffer.indexOf("\n\n")) !== -1) {
-            const rawEvent = buffer.slice(0, boundaryIndex)
-            console.log("RAW EVENT:", rawEvent)
-            buffer = buffer.slice(boundaryIndex + 2)
-
-            const lines = rawEvent.split("\n")
-
-            let event = ""
-            let data = ""
-
-            for (const line of lines) {
-              if (line.startsWith("event: ")) {
-                event = line.slice(7)
-              } else if (line.startsWith("data: ")) {
-                data += line.slice(6)
-              }
-            }
-
-            if (!event) continue
-
-            if (event === "lyrics") {
-              accumulatedLyrics += data
-
-              // ★修正（安全な更新）
-              setChatMessages([
-                {
-                  role: "ai",
-                  content: accumulatedLyrics,
-                },
-              ])
-            }
-
-            if (event === "analysis") {
-              console.log("ANALYSIS EVENT HIT")
-              analysisResult = data
-            }
-          }
-        }
-
-        setCurrentLyrics(accumulatedLyrics)
-        const sections = extractSections(accumulatedLyrics)
+        setCurrentLyrics(data.lyrics)
+        const sections = extractSections(data.lyrics)
         setAvailableSections(sections)
         setSelectedSection("全体を修正する")
 
-        if (analysisResult) {
-          setAnalysisData(analysisResult)
+        if (data.analysis) {
+          setAnalysisData(data.analysis)
         }
       } catch (error) {
         console.error("[v0] API Error:", error)
@@ -184,13 +134,10 @@ export default function InputForm({ selectedPurpose, onChatStart, chatStarted }:
         setIsLoading(false)
       }
     }
-
   }
 
-  // --- 以下は一切変更なし（省略せずそのまま） ---
-  // （ここから下はあなたのコードと完全一致なので省略せず続けている）
-
   const handleReset = () => {
+    // Reset chat-related states
     setChatMessages([])
     setCurrentLyrics("")
     setAnalysisData(null)
@@ -200,9 +147,9 @@ export default function InputForm({ selectedPurpose, onChatStart, chatStarted }:
     setFollowUpInput("")
     setErrorMessage(null)
 
+    // Notify parent to reset chat state
     onChatStart(false)
     setShowResetModal(false)
-
   }
 
   const handleFollowUp = async () => {
@@ -210,6 +157,7 @@ export default function InputForm({ selectedPurpose, onChatStart, chatStarted }:
       const userMessage = followUpInput.trim()
       setChatMessages((prev) => [...prev, { role: "user", content: userMessage }])
 
+      // Update instruction history for next call
       const newHistory = [...instructionHistory, userMessage]
       setInstructionHistory(newHistory)
 
@@ -248,81 +196,24 @@ export default function InputForm({ selectedPurpose, onChatStart, chatStarted }:
           throw new Error(`API Error: ${response.status} ${response.statusText}`)
         }
 
-        let accumulatedLyrics = ""
-        let analysisResult = ""
-
-        const reader = response.body?.getReader()
-        if (!reader) {
-          throw new Error("Response body is not readable")
-        }
-
-        const decoder = new TextDecoder()
-        let buffer = ""
+        const data: ApiResponse = await response.json()
+        console.log("[v0] Edit API Response received:", data)
 
         setChatMessages((prev) => [
           ...prev,
           {
             role: "ai",
-            content: "",
+            content: data.lyrics,
           },
         ])
 
-        while (true) {
-          const { done, value } = await reader.read()
-          if (done) break
-
-          buffer += decoder.decode(value, { stream: true })
-
-          const events = buffer.split("\n\n")
-          buffer = events.pop() || ""
-
-          for (const e of events) {
-            const lines = e.split("\n")
-
-            let event = ""
-            let data = ""
-
-            for (const line of lines) {
-              if (line.startsWith("event: ")) {
-                event = line.replace("event: ", "")
-              }
-              if (line.startsWith("data: ")) {
-                data += line.replace("data: ", "")
-              }
-            }
-
-            if (!event) continue
-
-            if (event === "lyrics") {
-              accumulatedLyrics += data
-              setChatMessages([
-                {
-                  role: "ai",
-                  content: accumulatedLyrics,
-                },
-              ])
-            }
-
-            if (event === "analysis") {
-              analysisResult = data
-              console.log("[v0] Analysis received:", analysisResult)
-            }
-
-            if (event === "done") {
-              console.log("[v0] Streaming complete")
-            }
-          }
-        }
-
-        console.log("FINAL ANALYSIS:", analysisResult)
-
-        setCurrentLyrics(accumulatedLyrics)
-        const sections = extractSections(accumulatedLyrics)
+        setCurrentLyrics(data.lyrics)
+        const sections = extractSections(data.lyrics)
         setAvailableSections(sections)
         setSelectedSection("全体を修正する")
 
-        if (analysisResult) {
-          setAnalysisData(analysisResult)
+        if (data.analysis) {
+          setAnalysisData(data.analysis)
         }
       } catch (error) {
         console.error("[v0] Edit API Error:", error)
@@ -340,7 +231,6 @@ export default function InputForm({ selectedPurpose, onChatStart, chatStarted }:
         setIsLoading(false)
       }
     }
-
   }
 
   return (
@@ -481,7 +371,7 @@ export default function InputForm({ selectedPurpose, onChatStart, chatStarted }:
                 </p>
                 <ol className="list-decimal pl-5 space-y-2">
                   <li>収集する情報：メールアドレス、お悩み内容、音楽の好みに関する情報</li>
-                  <li>利用目的：AIによる音楽生成サービスの提供、サービス改���のための分析</li>
+                  <li>利用目的：AIによる音楽生成サービスの提供、サービス改善のための分析</li>
                   <li>第三者提供：法令に基づく場合を除き、お客様の同意なく第三者に提供することはありません</li>
                   <li>お問い合わせ：otolinks@ova-japan.org</li>
                 </ol>
