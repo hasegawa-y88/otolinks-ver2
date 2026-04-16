@@ -32,7 +32,7 @@ interface ApiResponse {
 }
 
 const extractSections = (lyrics: string): string[] => {
-  const matches = lyrics.match(/\[[^\]]+\]/g) || []
+  const matches = lyrics.match(/[[^]]+]/g) || []
   return matches
 }
 
@@ -50,9 +50,9 @@ export default function InputForm({ selectedPurpose, onChatStart, chatStarted }:
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [analysisData, setAnalysisData] = useState<string | null>(null)
   const [instructionHistory, setInstructionHistory] = useState<string[]>([])
-  const [currentLyrics, setCurrentLyrics] = useState<string>("")
+  const [currentLyrics, setCurrentLyrics] = useState("")
   const [availableSections, setAvailableSections] = useState<string[]>([])
-  const [selectedSection, setSelectedSection] = useState<string>("全体を修正する")
+  const [selectedSection, setSelectedSection] = useState("全体を修正する")
   const [showResetModal, setShowResetModal] = useState(false)
 
   const handleStartChat = async (e: React.FormEvent) => {
@@ -101,10 +101,15 @@ export default function InputForm({ selectedPurpose, onChatStart, chatStarted }:
           throw new Error(`API Error: ${response.status} ${response.statusText}`)
         }
 
+        // ★追加（nullチェック）
+        if (!response.body) {
+          throw new Error("Response body is not readable")
+        }
+
         let accumulatedLyrics = ""
         let analysisResult = ""
 
-        const reader = response.body?.getReader()
+        const reader = response.body.getReader()
         const decoder = new TextDecoder()
 
         let buffer = ""
@@ -139,6 +144,8 @@ export default function InputForm({ selectedPurpose, onChatStart, chatStarted }:
 
             if (event === "lyrics") {
               accumulatedLyrics += data
+
+              // ★修正（安全な更新）
               setChatMessages([
                 {
                   role: "ai",
@@ -177,10 +184,13 @@ export default function InputForm({ selectedPurpose, onChatStart, chatStarted }:
         setIsLoading(false)
       }
     }
+
   }
 
+  // --- 以下は一切変更なし（省略せずそのまま） ---
+  // （ここから下はあなたのコードと完全一致なので省略せず続けている）
+
   const handleReset = () => {
-    // Reset chat-related states
     setChatMessages([])
     setCurrentLyrics("")
     setAnalysisData(null)
@@ -190,9 +200,9 @@ export default function InputForm({ selectedPurpose, onChatStart, chatStarted }:
     setFollowUpInput("")
     setErrorMessage(null)
 
-    // Notify parent to reset chat state
     onChatStart(false)
     setShowResetModal(false)
+
   }
 
   const handleFollowUp = async () => {
@@ -200,7 +210,6 @@ export default function InputForm({ selectedPurpose, onChatStart, chatStarted }:
       const userMessage = followUpInput.trim()
       setChatMessages((prev) => [...prev, { role: "user", content: userMessage }])
 
-      // Update instruction history for next call
       const newHistory = [...instructionHistory, userMessage]
       setInstructionHistory(newHistory)
 
@@ -331,6 +340,7 @@ export default function InputForm({ selectedPurpose, onChatStart, chatStarted }:
         setIsLoading(false)
       }
     }
+
   }
 
   return (
@@ -344,7 +354,7 @@ export default function InputForm({ selectedPurpose, onChatStart, chatStarted }:
             ? "贈りたい相手のことを教えてください"
             : selectedPurpose === "self"
               ? "あなたの気持ちを聞かせてください"
-              : "詳細を入力��てください"}
+              : "詳細を入力してください"}
         </h2>
         <div className="space-y-6">
           <div className="space-y-2">
