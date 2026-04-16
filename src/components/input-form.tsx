@@ -523,15 +523,17 @@ export default function InputForm({ selectedPurpose, onChatStart, chatStarted }:
                 id="followUp"
                 value={followUpInput}
                 onChange={(e) => setFollowUpInput(e.target.value)}
-                onKeyPress={(e) => e.key === "Enter" && handleFollowUp()}
+                onKeyPress={(e) => e.key === "Enter" && !isLoading && handleFollowUp()}
                 placeholder="さらに指示を入力してください..."
-                className="bg-black/50 border-gray-700 focus:border-teal-400 transition-all"
+                disabled={isLoading}
+                className={cn("bg-black/50 border-gray-700 focus:border-teal-400 transition-all", isLoading ? "opacity-70 cursor-not-allowed" : "")}
               />
               <Button
                 onClick={handleFollowUp}
-                className="px-4 py-2 bg-gradient-to-r from-pink-500 via-teal-400 to-yellow-400 hover:opacity-90 hover:cursor-pointer transition-all"
+                disabled={isLoading}
+                className={cn("px-4 py-2 bg-gradient-to-r from-pink-500 via-teal-400 to-yellow-400 hover:opacity-90 hover:cursor-pointer transition-all", isLoading ? "opacity-70 cursor-not-allowed" : "")}
               >
-                <Send className="h-4 w-4" />
+                {isLoading ? <Loader className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
               </Button>
             </div>
           </div>
