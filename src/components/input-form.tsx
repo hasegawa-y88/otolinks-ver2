@@ -331,6 +331,8 @@ export default function InputForm({ selectedPurpose, onChatStart, chatStarted }:
           }
         }
 
+        console.log("FINAL ANALYSIS:", analysisResult)
+
         setCurrentLyrics(accumulatedLyrics)
         const sections = extractSections(accumulatedLyrics)
         setAvailableSections(sections)
