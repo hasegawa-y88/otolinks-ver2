@@ -131,7 +131,7 @@ export default function InputForm({ selectedPurpose, onChatStart, chatStarted }:
               if (line.startsWith("event: ")) {
                 event = line.slice(7)
               } else if (line.startsWith("data: ")) {
-                data += line.slice(6) + "\n"
+                data += line.slice(6)
               }
             }
 
@@ -150,34 +150,6 @@ export default function InputForm({ selectedPurpose, onChatStart, chatStarted }:
             if (event === "analysis") {
               console.log("ANALYSIS EVENT HIT")
               analysisResult = data
-            }
-          }
-        }
-
-        // Handle any remaining buffer
-        if (buffer) {
-          const lines = buffer.split("\n")
-          for (const line of lines) {
-            if (line.startsWith("event: ")) {
-              const eventType = line.slice(7)
-              const nextLineIdx = lines.indexOf(line) + 1
-              const dataLine = lines[nextLineIdx]
-
-              if (dataLine?.startsWith("data: ")) {
-                const data = dataLine.slice(6)
-
-                if (eventType === "lyrics") {
-                  accumulatedLyrics += data
-                  setChatMessages([
-                    {
-                      role: "ai",
-                      content: accumulatedLyrics,
-                    },
-                  ])
-                } else if (eventType === "analysis") {
-                  analysisResult = data
-                }
-              }
             }
           }
         }
@@ -306,7 +278,7 @@ export default function InputForm({ selectedPurpose, onChatStart, chatStarted }:
                 event = line.replace("event: ", "")
               }
               if (line.startsWith("data: ")) {
-                data += line.replace("data: ", "") + "\n"
+                data += line.replace("data: ", "")
               }
             }
 
