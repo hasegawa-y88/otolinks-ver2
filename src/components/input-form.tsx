@@ -304,7 +304,7 @@ export default function InputForm({ selectedPurpose, onChatStart, chatStarted }:
                 event = line.replace("event: ", "")
               }
               if (line.startsWith("data: ")) {
-                data += line.replace("data: ", "")
+                data += line.replace("data: ", "") + "\n"
               }
             }
 
