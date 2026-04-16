@@ -455,7 +455,7 @@ export default function InputForm({ selectedPurpose, onChatStart, chatStarted }:
           {isLoading && (
             <div className="flex items-center justify-center gap-2 py-8">
               <Loader className="h-5 w-5 animate-spin text-teal-400" />
-              <span className="text-gray-300">生成中...</span>
+              <span className="text-gray-300">歌詞を考えています...</span>
             </div>
           )}
 
