@@ -291,33 +291,44 @@ export default function InputForm({ selectedPurpose, onChatStart, chatStarted }:
           if (done) break
 
           buffer += decoder.decode(value, { stream: true })
-          const lines = buffer.split("\n")
-          buffer = lines.pop() || ""
 
-          for (const line of lines) {
-            if (line.startsWith("event: ")) {
-              const eventType = line.slice(7)
-              const dataLine = lines[lines.indexOf(line) + 1]
+          const events = buffer.split("\n\n")
+          buffer = events.pop() || ""
 
-              if (dataLine?.startsWith("data: ")) {
-                const data = dataLine.slice(6)
+          for (const e of events) {
+            const lines = e.split("\n")
 
-                if (eventType === "lyrics") {
-                  accumulatedLyrics += data
-                  setChatMessages((prev) => {
-                    const updated = [...prev]
-                    if (updated[updated.length - 1]?.role === "ai") {
-                      updated[updated.length - 1].content = accumulatedLyrics
-                    }
-                    return updated
-                  })
-                } else if (eventType === "analysis") {
-                  analysisResult = data
-                  console.log("[v0] Analysis received:", analysisResult)
-                } else if (eventType === "done") {
-                  console.log("[v0] Streaming complete")
-                }
+            let event = ""
+            let data = ""
+
+            for (const line of lines) {
+              if (line.startsWith("event: ")) {
+                event = line.replace("event: ", "")
               }
+              if (line.startsWith("data: ")) {
+                data += line.replace("data: ", "")
+              }
+            }
+
+            if (!event) continue
+
+            if (event === "lyrics") {
+              accumulatedLyrics += data
+              setChatMessages([
+                {
+                  role: "ai",
+                  content: accumulatedLyrics,
+                },
+              ])
+            }
+
+            if (event === "analysis") {
+              analysisResult = data
+              console.log("[v0] Analysis received:", analysisResult)
+            }
+
+            if (event === "done") {
+              console.log("[v0] Streaming complete")
             }
           }
         }
