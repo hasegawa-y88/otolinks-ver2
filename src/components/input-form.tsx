@@ -331,35 +331,6 @@ export default function InputForm({ selectedPurpose, onChatStart, chatStarted }:
           }
         }
 
-        // Handle any remaining buffer
-        if (buffer) {
-          const lines = buffer.split("\n")
-          for (const line of lines) {
-            if (line.startsWith("event: ")) {
-              const eventType = line.slice(7)
-              const nextLineIdx = lines.indexOf(line) + 1
-              const dataLine = lines[nextLineIdx]
-
-              if (dataLine?.startsWith("data: ")) {
-                const data = dataLine.slice(6)
-
-                if (eventType === "lyrics") {
-                  accumulatedLyrics += data
-                  setChatMessages((prev) => {
-                    const updated = [...prev]
-                    if (updated[updated.length - 1]?.role === "ai") {
-                      updated[updated.length - 1].content = accumulatedLyrics
-                    }
-                    return updated
-                  })
-                } else if (eventType === "analysis") {
-                  analysisResult = data
-                }
-              }
-            }
-          }
-        }
-
         setCurrentLyrics(accumulatedLyrics)
         const sections = extractSections(accumulatedLyrics)
         setAvailableSections(sections)
