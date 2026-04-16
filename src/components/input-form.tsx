@@ -10,10 +10,10 @@ import { cn } from "@/lib/utils"
 import { Checkbox } from "@/components/ui/checkbox"
 
 const GENERATE_LYRICS_ENDPOINT =
-  "https://otolinks-functions-ffg4e2bqa0byd6c2.japaneast-01.azurewebsites.net/api/generate_lyrics?code=ZYRBr3JNXRX89GQwTN6EXihiKiiV0f5LKx43QGuRBCrZAzFuu1X-rQ%3D%3D"
+  "https://otolinks-nodejs-functions-c4hrd2gwhngybzdu.japaneast-01.azurewebsites.net/api/generate_lyrics?code=e-xCpU06e8zRT_JjEYpw1jbjl92kvRc_ZB5j2euJDhnlAzFuL7ci2g%3D%3D"
 
 const EDIT_LYRICS_ENDPOINT =
-  "https://otolinks-functions-ffg4e2bqa0byd6c2.japaneast-01.azurewebsites.net/api/edit_lyrics?code=ns7I4qeGzFFThvJfsxhBQdAGnYpoCNTeVFR_8jEMrojAAzFurMOwfA%3D%3D"
+  "https://otolinks-nodejs-functions-c4hrd2gwhngybzdu.japaneast-01.azurewebsites.net/api/edit_lyrics?code=MODJhvrFl6Ox3nonWlNeBDrkhhynqjnrnzSh8uR8r2gCAzFuhMNilw%3D%3D"
 
 interface InputFormProps {
   selectedPurpose: string | null
