@@ -105,51 +105,49 @@ export default function InputForm({ selectedPurpose, onChatStart, chatStarted }:
         let analysisResult = ""
 
         const reader = response.body?.getReader()
-        if (!reader) {
-          throw new Error("Response body is not readable")
-        }
-
         const decoder = new TextDecoder()
-        let buffer = ""
 
-        setChatMessages([
-          {
-            role: "ai",
-            content: "",
-          },
-        ])
+        let buffer = ""
 
         while (true) {
           const { done, value } = await reader.read()
           if (done) break
 
           buffer += decoder.decode(value, { stream: true })
-          const lines = buffer.split("\n")
-          buffer = lines.pop() || ""
 
-          for (const line of lines) {
-            if (line.startsWith("event: ")) {
-              const eventType = line.slice(7)
-              const dataLine = lines[lines.indexOf(line) + 1]
+          let boundaryIndex
 
-              if (dataLine?.startsWith("data: ")) {
-                const data = dataLine.slice(6)
+          while ((boundaryIndex = buffer.indexOf("\n\n")) !== -1) {
+            const rawEvent = buffer.slice(0, boundaryIndex)
+            buffer = buffer.slice(boundaryIndex + 2)
 
-                if (eventType === "lyrics") {
-                  accumulatedLyrics += data
-                  setChatMessages([
-                    {
-                      role: "ai",
-                      content: accumulatedLyrics,
-                    },
-                  ])
-                } else if (eventType === "analysis") {
-                  analysisResult = data
-                  console.log("[v0] Analysis received:", analysisResult)
-                } else if (eventType === "done") {
-                  console.log("[v0] Streaming complete")
-                }
+            const lines = rawEvent.split("\n")
+
+            let event = ""
+            let data = ""
+
+            for (const line of lines) {
+              if (line.startsWith("event: ")) {
+                event = line.slice(7)
+              } else if (line.startsWith("data: ")) {
+                data += line.slice(6)
               }
+            }
+
+            if (!event) continue
+
+            if (event === "lyrics") {
+              accumulatedLyrics += data
+              setChatMessages([
+                {
+                  role: "ai",
+                  content: accumulatedLyrics,
+                },
+              ])
+            }
+
+            if (event === "analysis") {
+              analysisResult = data
             }
           }
         }
