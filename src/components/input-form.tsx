@@ -101,23 +101,94 @@ export default function InputForm({ selectedPurpose, onChatStart, chatStarted }:
           throw new Error(`API Error: ${response.status} ${response.statusText}`)
         }
 
-        const data: ApiResponse = await response.json()
-        console.log("[v0] API Response received:", data)
+        let accumulatedLyrics = ""
+        let analysisResult = ""
+
+        const reader = response.body?.getReader()
+        if (!reader) {
+          throw new Error("Response body is not readable")
+        }
+
+        const decoder = new TextDecoder()
+        let buffer = ""
 
         setChatMessages([
           {
             role: "ai",
-            content: data.lyrics,
+            content: "",
           },
         ])
 
-        setCurrentLyrics(data.lyrics)
-        const sections = extractSections(data.lyrics)
+        while (true) {
+          const { done, value } = await reader.read()
+          if (done) break
+
+          buffer += decoder.decode(value, { stream: true })
+          const lines = buffer.split("\n")
+          buffer = lines.pop() || ""
+
+          for (const line of lines) {
+            if (line.startsWith("event: ")) {
+              const eventType = line.slice(7)
+              const dataLine = lines[lines.indexOf(line) + 1]
+
+              if (dataLine?.startsWith("data: ")) {
+                const data = dataLine.slice(6)
+
+                if (eventType === "lyrics") {
+                  accumulatedLyrics += data
+                  setChatMessages([
+                    {
+                      role: "ai",
+                      content: accumulatedLyrics,
+                    },
+                  ])
+                } else if (eventType === "analysis") {
+                  analysisResult = data
+                  console.log("[v0] Analysis received:", analysisResult)
+                } else if (eventType === "done") {
+                  console.log("[v0] Streaming complete")
+                }
+              }
+            }
+          }
+        }
+
+        // Handle any remaining buffer
+        if (buffer) {
+          const lines = buffer.split("\n")
+          for (const line of lines) {
+            if (line.startsWith("event: ")) {
+              const eventType = line.slice(7)
+              const nextLineIdx = lines.indexOf(line) + 1
+              const dataLine = lines[nextLineIdx]
+
+              if (dataLine?.startsWith("data: ")) {
+                const data = dataLine.slice(6)
+
+                if (eventType === "lyrics") {
+                  accumulatedLyrics += data
+                  setChatMessages([
+                    {
+                      role: "ai",
+                      content: accumulatedLyrics,
+                    },
+                  ])
+                } else if (eventType === "analysis") {
+                  analysisResult = data
+                }
+              }
+            }
+          }
+        }
+
+        setCurrentLyrics(accumulatedLyrics)
+        const sections = extractSections(accumulatedLyrics)
         setAvailableSections(sections)
         setSelectedSection("全体を修正する")
 
-        if (data.analysis) {
-          setAnalysisData(data.analysis)
+        if (analysisResult) {
+          setAnalysisData(analysisResult)
         }
       } catch (error) {
         console.error("[v0] API Error:", error)
@@ -196,24 +267,97 @@ export default function InputForm({ selectedPurpose, onChatStart, chatStarted }:
           throw new Error(`API Error: ${response.status} ${response.statusText}`)
         }
 
-        const data: ApiResponse = await response.json()
-        console.log("[v0] Edit API Response received:", data)
+        let accumulatedLyrics = ""
+        let analysisResult = ""
+
+        const reader = response.body?.getReader()
+        if (!reader) {
+          throw new Error("Response body is not readable")
+        }
+
+        const decoder = new TextDecoder()
+        let buffer = ""
 
         setChatMessages((prev) => [
           ...prev,
           {
             role: "ai",
-            content: data.lyrics,
+            content: "",
           },
         ])
 
-        setCurrentLyrics(data.lyrics)
-        const sections = extractSections(data.lyrics)
+        while (true) {
+          const { done, value } = await reader.read()
+          if (done) break
+
+          buffer += decoder.decode(value, { stream: true })
+          const lines = buffer.split("\n")
+          buffer = lines.pop() || ""
+
+          for (const line of lines) {
+            if (line.startsWith("event: ")) {
+              const eventType = line.slice(7)
+              const dataLine = lines[lines.indexOf(line) + 1]
+
+              if (dataLine?.startsWith("data: ")) {
+                const data = dataLine.slice(6)
+
+                if (eventType === "lyrics") {
+                  accumulatedLyrics += data
+                  setChatMessages((prev) => {
+                    const updated = [...prev]
+                    if (updated[updated.length - 1]?.role === "ai") {
+                      updated[updated.length - 1].content = accumulatedLyrics
+                    }
+                    return updated
+                  })
+                } else if (eventType === "analysis") {
+                  analysisResult = data
+                  console.log("[v0] Analysis received:", analysisResult)
+                } else if (eventType === "done") {
+                  console.log("[v0] Streaming complete")
+                }
+              }
+            }
+          }
+        }
+
+        // Handle any remaining buffer
+        if (buffer) {
+          const lines = buffer.split("\n")
+          for (const line of lines) {
+            if (line.startsWith("event: ")) {
+              const eventType = line.slice(7)
+              const nextLineIdx = lines.indexOf(line) + 1
+              const dataLine = lines[nextLineIdx]
+
+              if (dataLine?.startsWith("data: ")) {
+                const data = dataLine.slice(6)
+
+                if (eventType === "lyrics") {
+                  accumulatedLyrics += data
+                  setChatMessages((prev) => {
+                    const updated = [...prev]
+                    if (updated[updated.length - 1]?.role === "ai") {
+                      updated[updated.length - 1].content = accumulatedLyrics
+                    }
+                    return updated
+                  })
+                } else if (eventType === "analysis") {
+                  analysisResult = data
+                }
+              }
+            }
+          }
+        }
+
+        setCurrentLyrics(accumulatedLyrics)
+        const sections = extractSections(accumulatedLyrics)
         setAvailableSections(sections)
         setSelectedSection("全体を修正する")
 
-        if (data.analysis) {
-          setAnalysisData(data.analysis)
+        if (analysisResult) {
+          setAnalysisData(analysisResult)
         }
       } catch (error) {
         console.error("[v0] Edit API Error:", error)
@@ -371,7 +515,7 @@ export default function InputForm({ selectedPurpose, onChatStart, chatStarted }:
                 </p>
                 <ol className="list-decimal pl-5 space-y-2">
                   <li>収集する情報：メールアドレス、お悩み内容、音楽の好みに関する情報</li>
-                  <li>利用目的：AIによる音楽生成サービスの提供、サービス改善のための分析</li>
+                  <li>利用目的：AIによる音楽生成サービスの提供、サービス改���のための分析</li>
                   <li>第三者提供：法令に基づく場合を除き、お客様の同意なく第三者に提供することはありません</li>
                   <li>お問い合わせ：otolinks@ova-japan.org</li>
                 </ol>
