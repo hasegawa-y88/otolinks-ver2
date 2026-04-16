@@ -119,6 +119,7 @@ export default function InputForm({ selectedPurpose, onChatStart, chatStarted }:
 
           while ((boundaryIndex = buffer.indexOf("\n\n")) !== -1) {
             const rawEvent = buffer.slice(0, boundaryIndex)
+            console.log("RAW EVENT:", rawEvent)
             buffer = buffer.slice(boundaryIndex + 2)
 
             const lines = rawEvent.split("\n")
@@ -130,7 +131,7 @@ export default function InputForm({ selectedPurpose, onChatStart, chatStarted }:
               if (line.startsWith("event: ")) {
                 event = line.slice(7)
               } else if (line.startsWith("data: ")) {
-                data += line.slice(6)
+                data += line.slice(6) + "\n"
               }
             }
 
@@ -147,6 +148,7 @@ export default function InputForm({ selectedPurpose, onChatStart, chatStarted }:
             }
 
             if (event === "analysis") {
+              console.log("ANALYSIS EVENT HIT")
               analysisResult = data
             }
           }
