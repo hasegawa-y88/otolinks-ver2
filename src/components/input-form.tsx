@@ -452,13 +452,6 @@ export default function InputForm({ selectedPurpose, onChatStart, chatStarted }:
 
       {chatStarted && (
         <div className="mt-6 bg-gray-900/50 rounded-2xl p-6 md:p-8 backdrop-blur-sm border border-gray-800 space-y-6">
-          {isLoading && (
-            <div className="flex items-center justify-center gap-2 py-8">
-              <Loader className="h-5 w-5 animate-spin text-teal-400" />
-              <span className="text-gray-300">歌詞を考えています...</span>
-            </div>
-          )}
-
           {errorMessage && (
             <div className="bg-red-500/10 border border-red-500/50 rounded-lg p-4">
               <p className="text-red-400 text-sm">{errorMessage}</p>
@@ -486,6 +479,13 @@ export default function InputForm({ selectedPurpose, onChatStart, chatStarted }:
                 </div>
               </div>
             ))}
+
+            {isLoading && (
+              <div className="flex items-center justify-center gap-2 py-8">
+                <Loader className="h-5 w-5 animate-spin text-teal-400" />
+                <span className="text-gray-300">歌詞を考えています...</span>
+              </div>
+            )}
           </div>
 
           <div className="space-y-3">
