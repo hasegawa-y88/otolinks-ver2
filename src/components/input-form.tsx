@@ -534,39 +534,72 @@ export default function InputForm({ selectedPurpose, onChatStart, chatStarted }:
           )}
 
           <div className="bg-black/50 rounded-lg p-6 border border-gray-700 min-h-[300px] flex flex-col space-y-4 overflow-y-auto">
-            {chatMessages.map((message, index) => (
-              <div key={index}>
-                <div
-                  className={cn(
-                    "flex",
-                    message.role === "user" ? "justify-end" : "justify-start"
-                  )}
-                >
+            {chatMessages.map((message, index) => {
+              const isLastAIMessage = index === chatMessages.length - 1 && message.role === "ai"
+              const showEditMode = isLastAIMessage && isEditingLyrics
+
+              return (
+                <div key={index}>
                   <div
                     className={cn(
-                      "max-w-xs lg:max-w-md px-4 py-2 rounded-lg whitespace-pre-wrap",
-                      message.role === "user"
-                        ? "bg-teal-500/30 text-gray-200 border border-teal-400/50"
-                        : "bg-gray-800/50 text-gray-300 border border-gray-700"
+                      "flex",
+                      message.role === "user" ? "justify-end" : "justify-start"
                     )}
                   >
-                    <p className="leading-relaxed">{message.content}</p>
+                    {showEditMode ? (
+                      <div className="w-full">
+                        <Textarea
+                          value={editedLyrics}
+                          onChange={(e) => setEditedLyrics(e.target.value)}
+                          className="w-full bg-white text-black border border-gray-300 rounded-lg p-4 focus:border-teal-400 focus:outline-none transition-all min-h-[300px] whitespace-pre-wrap font-mono text-sm"
+                        />
+                      </div>
+                    ) : (
+                      <div
+                        className={cn(
+                          "max-w-xs lg:max-w-md px-4 py-2 rounded-lg whitespace-pre-wrap",
+                          message.role === "user"
+                            ? "bg-teal-500/30 text-gray-200 border border-teal-400/50"
+                            : "bg-gray-800/50 text-gray-300 border border-gray-700"
+                        )}
+                      >
+                        <p className="leading-relaxed">{message.content}</p>
+                      </div>
+                    )}
                   </div>
-                </div>
 
-                {/* Show edit buttons only for the last AI message */}
-                {index === chatMessages.length - 1 && message.role === "ai" && !isEditingLyrics && (
-                  <div className="flex justify-start mt-2">
-                    <Button
-                      onClick={handleEditClick}
-                      className="px-3 py-1 text-sm bg-gray-800 hover:bg-gray-700 text-gray-200 border border-gray-700 rounded-md transition-all hover:cursor-pointer"
-                    >
-                      自分で編集する
-                    </Button>
-                  </div>
-                )}
-              </div>
-            ))}
+                  {/* Show edit button only for the last AI message when not editing */}
+                  {isLastAIMessage && !isEditingLyrics && (
+                    <div className="flex justify-start mt-3">
+                      <Button
+                        onClick={handleEditClick}
+                        className="px-4 py-2 text-sm font-medium bg-gradient-to-r from-pink-500 via-teal-400 to-yellow-400 hover:opacity-90 text-white rounded-lg transition-all hover:cursor-pointer"
+                      >
+                        自分で編集する
+                      </Button>
+                    </div>
+                  )}
+
+                  {/* Show confirm/reset buttons only when editing the last message */}
+                  {showEditMode && (
+                    <div className="flex gap-2 mt-3">
+                      <Button
+                        onClick={() => setShowEditResetModal(true)}
+                        className="flex-1 px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-200 border border-gray-700 rounded-md transition-all hover:cursor-pointer"
+                      >
+                        リセット
+                      </Button>
+                      <Button
+                        onClick={handleEditConfirm}
+                        className="flex-1 px-4 py-2 bg-gradient-to-r from-pink-500 via-teal-400 to-yellow-400 hover:opacity-90 transition-all hover:cursor-pointer"
+                      >
+                        確定
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              )
+            })}
 
             {isLoading && (
               <div className="flex items-center justify-center gap-2 py-8">
@@ -575,30 +608,6 @@ export default function InputForm({ selectedPurpose, onChatStart, chatStarted }:
               </div>
             )}
           </div>
-
-          {isEditingLyrics && (
-            <div className="space-y-3">
-              <Textarea
-                value={editedLyrics}
-                onChange={(e) => setEditedLyrics(e.target.value)}
-                className="bg-black/50 border-gray-700 focus:border-teal-400 transition-all min-h-[300px] whitespace-pre-wrap"
-              />
-              <div className="flex gap-2">
-                <Button
-                  onClick={() => setShowEditResetModal(true)}
-                  className="flex-1 px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-200 border border-gray-700 rounded-md transition-all hover:cursor-pointer"
-                >
-                  リセット
-                </Button>
-                <Button
-                  onClick={handleEditConfirm}
-                  className="flex-1 px-4 py-2 bg-gradient-to-r from-pink-500 via-teal-400 to-yellow-400 hover:opacity-90 transition-all hover:cursor-pointer"
-                >
-                  確定
-                </Button>
-              </div>
-            </div>
-          )}
 
           <div className="space-y-3">
             <Button
@@ -631,23 +640,31 @@ export default function InputForm({ selectedPurpose, onChatStart, chatStarted }:
             <label htmlFor="followUp" className="block text-sm font-medium">
               追加の指示
             </label>
-            <div className="flex gap-2">
+            <div className="flex gap-2 group relative">
               <Input
                 id="followUp"
                 value={followUpInput}
                 onChange={(e) => setFollowUpInput(e.target.value)}
-                onKeyPress={(e) => e.key === "Enter" && !isLoading && handleFollowUp()}
+                onKeyPress={(e) => e.key === "Enter" && !isLoading && !isEditingLyrics && handleFollowUp()}
                 placeholder="さらに指示を入力してください..."
-                disabled={isLoading}
-                className={cn("bg-black/50 border-gray-700 focus:border-teal-400 transition-all", isLoading ? "opacity-70 cursor-not-allowed" : "")}
+                disabled={isLoading || isEditingLyrics}
+                className={cn("bg-black/50 border-gray-700 focus:border-teal-400 transition-all", (isLoading || isEditingLyrics) ? "opacity-70 cursor-not-allowed" : "")}
               />
-              <Button
-                onClick={handleFollowUp}
-                disabled={isLoading}
-                className={cn("px-4 py-2 bg-gradient-to-r from-pink-500 via-teal-400 to-yellow-400 hover:opacity-90 hover:cursor-pointer transition-all", isLoading ? "opacity-70 cursor-not-allowed" : "")}
-              >
-                {isLoading ? <Loader className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-              </Button>
+              <div className="relative">
+                <Button
+                  onClick={isEditingLyrics ? undefined : handleFollowUp}
+                  disabled={isLoading || isEditingLyrics}
+                  className={cn("px-4 py-2 bg-gradient-to-r from-pink-500 via-teal-400 to-yellow-400 hover:opacity-90 hover:cursor-pointer transition-all", (isLoading || isEditingLyrics) ? "opacity-70 cursor-not-allowed" : "")}
+                  title={isEditingLyrics ? "自分で編集を先に確定させてください" : ""}
+                >
+                  {isLoading ? <Loader className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                </Button>
+                {isEditingLyrics && (
+                  <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 hidden group-hover:block bg-gray-900 border border-gray-700 rounded-md px-3 py-1 text-xs text-gray-200 whitespace-nowrap">
+                    自分で編集を先に確定させてください
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
