@@ -6,7 +6,6 @@ import { useState } from "react"
 import HeroSection from "@/components/hero-section"
 import PurposeCards from "@/components/purpose-cards"
 import InputForm from "@/components/input-form"
-import ProcessFlow from "@/components/process-flow"
 import Logo from "@/components/logo"
 import Footer from "@/components/footer"
 export default function Home() {
