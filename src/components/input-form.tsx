@@ -153,7 +153,7 @@ export default function InputForm({ selectedPurpose, onChatStart, chatStarted }:
     setIsEditingLyrics(false)
     setEditedLyrics("")
     setBackupLyrics("")
-    
+
     // Notify parent to reset chat state
     onChatStart(false)
     setShowResetModal(false)
@@ -176,7 +176,7 @@ export default function InputForm({ selectedPurpose, onChatStart, chatStarted }:
     const sections = extractSections(editedLyrics)
     setAvailableSections(sections)
     setSelectedSection("全体を修正する")
-    
+
     // Update the last AI message with edited lyrics
     setChatMessages((prev) => {
       const updated = [...prev]
@@ -186,7 +186,7 @@ export default function InputForm({ selectedPurpose, onChatStart, chatStarted }:
       }
       return updated
     })
-    
+
     setIsEditingLyrics(false)
     setEditedLyrics("")
     setBackupLyrics("")
@@ -551,7 +551,7 @@ export default function InputForm({ selectedPurpose, onChatStart, chatStarted }:
                         <Textarea
                           value={editedLyrics}
                           onChange={(e) => setEditedLyrics(e.target.value)}
-                          className="w-full bg-white text-black border border-gray-300 rounded-lg p-4 focus:border-teal-400 focus:outline-none transition-all min-h-[300px] whitespace-pre-wrap font-mono text-sm"
+                          className="w-full !bg-white text-black border border-gray-300 rounded-lg p-4 focus:border-teal-400 focus:outline-none transition-all min-h-[300px] whitespace-pre-wrap font-mono text-sm"
                         />
                       </div>
                     ) : (
