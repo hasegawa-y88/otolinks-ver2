@@ -407,7 +407,7 @@ export default function InputForm({ selectedPurpose, onChatStart, chatStarted }:
               <div className="bg-black/70 border border-gray-800 rounded-md p-4 mb-4 h-40 overflow-y-auto text-sm text-gray-300">
                 <h4 className="font-bold mb-2">プライバシーポリシー</h4>
                 <p className="mb-2">
-                  当サービス「Oto Links」は、お客様の個人情報を大切に扱い、以下の方針に基づいて管理・保護いたします。
+                  当サービス「Oto Links」は、お��様の個人情報を大切に扱い、以下の方針に基づいて管理・保護いたします。
                 </p>
                 <ol className="list-decimal pl-5 space-y-2">
                   <li>収集する情報：メールアドレス、お悩み内容、音楽の好みに関する情報</li>
@@ -618,15 +618,15 @@ export default function InputForm({ selectedPurpose, onChatStart, chatStarted }:
               最初からやり直す
             </Button>
 
-            <div>
+            <div className="group relative">
               <label className="block text-sm font-medium mb-2">
                 修正したいセクションを選択
               </label>
               <select
                 value={selectedSection}
-                onChange={(e) => setSelectedSection(e.target.value)}
-                disabled={isLoading}
-                className={cn("w-full bg-black/50 border border-gray-700 rounded-md px-3 py-2 text-gray-200 focus:border-teal-400 focus:outline-none transition-all", isLoading ? "opacity-70 cursor-not-allowed" : "")}
+                onChange={(e) => !isEditingLyrics && setSelectedSection(e.target.value)}
+                disabled={isLoading || isEditingLyrics}
+                className={cn("w-full bg-black/50 border border-gray-700 rounded-md px-3 py-2 text-gray-200 focus:border-teal-400 focus:outline-none transition-all", (isLoading || isEditingLyrics) ? "opacity-70 cursor-not-allowed" : "")}
               >
                 <option value="全体を修正する">全体を修正する</option>
                 {availableSections.map((section) => (
@@ -635,6 +635,11 @@ export default function InputForm({ selectedPurpose, onChatStart, chatStarted }:
                   </option>
                 ))}
               </select>
+              {isEditingLyrics && (
+                <div className="absolute top-full left-0 mt-2 hidden group-hover:block bg-gray-900 border border-gray-700 rounded-md px-3 py-1 text-xs text-gray-200 whitespace-nowrap z-10">
+                  自分で編集を先に確定させてください
+                </div>
+              )}
             </div>
 
             <label htmlFor="followUp" className="block text-sm font-medium">
