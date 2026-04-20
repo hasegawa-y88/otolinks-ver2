@@ -1,49 +1,71 @@
 "use client"
 
 import type React from "react"
-import { useState, useRef } from "react"
+import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
-import { AlertCircle } from "lucide-react"
+import { AlertCircle, Send, Loader, RotateCcw, X } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Checkbox } from "@/components/ui/checkbox"
 
+const GENERATE_LYRICS_ENDPOINT =
+  "https://otolinks-nodejs-functions-c4hrd2gwhngybzdu.japaneast-01.azurewebsites.net/api/generate_lyrics?code=e-xCpU06e8zRT_JjEYpw1jbjl92kvRc_ZB5j2euJDhnlAzFuL7ci2g%3D%3D"
+
+const EDIT_LYRICS_ENDPOINT =
+  "https://otolinks-nodejs-functions-c4hrd2gwhngybzdu.japaneast-01.azurewebsites.net/api/edit_lyrics?code=MODJhvrFl6Ox3nonWlNeBDrkhhynqjnrnzSh8uR8r2gCAzFuhMNilw%3D%3D"
+
 interface InputFormProps {
-  onSubmit: (e: React.FormEvent) => void
   selectedPurpose: string | null
+  onChatStart: (started: boolean) => void
+  chatStarted: boolean
 }
 
-export default function InputForm({ onSubmit, selectedPurpose }: InputFormProps) {
-  const [email, setEmail] = useState("")
-  const [nameInput, setNameInput] = useState("")
+interface ChatMessage {
+  role: "user" | "ai"
+  content: string
+}
+
+interface ApiResponse {
+  lyrics: string
+  analysis?: string
+}
+
+const extractSections = (lyrics: string): string[] => {
+  const matches = lyrics.match(/\[[^\]]+\]/g) || []
+  return matches
+}
+
+export default function InputForm({ selectedPurpose, onChatStart, chatStarted }: InputFormProps) {
   const [worry, setWorry] = useState("")
-  const [music, setMusic] = useState("")
+  const [favoriteSong, setFavoriteSong] = useState("")
+  const [favoriteArtist, setFavoriteArtist] = useState("")
+  const [favoriteGenre, setFavoriteGenre] = useState("")
+  const [songMood, setSongMood] = useState("")
   const [agreeToPolicy, setAgreeToPolicy] = useState(false)
-  const [errors, setErrors] = useState<{ email?: string; nameInput?: string; worry?: string; policy?: string }>({})
-  const formRef = useRef<HTMLFormElement>(null)
+  const [errors, setErrors] = useState<{ worry?: string; policy?: string }>({})
+  const [followUpInput, setFollowUpInput] = useState("")
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([])
+  const [isLoading, setIsLoading] = useState(false)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const [analysisData, setAnalysisData] = useState<string | null>(null)
+  const [instructionHistory, setInstructionHistory] = useState<string[]>([])
+  const [currentLyrics, setCurrentLyrics] = useState<string>("")
+  const [availableSections, setAvailableSections] = useState<string[]>([])
+  const [selectedSection, setSelectedSection] = useState<string>("全体を修正する")
+  const [showResetModal, setShowResetModal] = useState(false)
+  const [isEditingLyrics, setIsEditingLyrics] = useState(false)
+  const [editedLyrics, setEditedLyrics] = useState("")
+  const [backupLyrics, setBackupLyrics] = useState("")
+  const [showEditResetModal, setShowEditResetModal] = useState(false)
 
-  const [isSubmitted, setIsSubmitted] = useState(false)
-
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleStartChat = async (e: React.FormEvent) => {
     e.preventDefault()
 
     const newErrors: {
-      nameInput?: string
-      email?: string
       worry?: string
       policy?: string
     } = {}
-
-    if (!nameInput) {
-      newErrors.nameInput = "お名前を入力してください"
-    }
-
-    if (!email) {
-      newErrors.email = "メールアドレスを入力してください"
-    } else if (!/\S+@\S+\.\S+/.test(email)) {
-      newErrors.email = "有効なメールアドレスを入力してください"
-    }
 
     if (!worry) {
       newErrors.worry = "悩みを入力してください"
@@ -56,21 +78,206 @@ export default function InputForm({ onSubmit, selectedPurpose }: InputFormProps)
     setErrors(newErrors)
 
     if (Object.keys(newErrors).length === 0) {
-      formRef.current?.submit()
-      setIsSubmitted(true)
-      onSubmit(e)
+      onChatStart(true)
+      setErrorMessage(null)
+      setIsLoading(true)
+
+      try {
+        const requestBody = {
+          song: favoriteSong || "",
+          artist: favoriteArtist || "",
+          genre: favoriteGenre || "",
+          mood: songMood || "",
+          problem: worry,
+        }
+
+        console.log("[v0] Sending request to Azure Functions:", requestBody)
+
+        const response = await fetch(GENERATE_LYRICS_ENDPOINT, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(requestBody),
+        })
+
+        if (!response.ok) {
+          throw new Error(`API Error: ${response.status} ${response.statusText}`)
+        }
+
+        const data: ApiResponse = await response.json()
+        console.log("[v0] API Response received:", data)
+
+        setChatMessages([
+          {
+            role: "ai",
+            content: data.lyrics,
+          },
+        ])
+
+        setCurrentLyrics(data.lyrics)
+        const sections = extractSections(data.lyrics)
+        setAvailableSections(sections)
+        setSelectedSection("全体を修正する")
+
+        if (data.analysis) {
+          setAnalysisData(data.analysis)
+        }
+      } catch (error) {
+        console.error("[v0] API Error:", error)
+        const errorMsg =
+          error instanceof Error ? error.message : "歌詞の生成に失敗しました。もう一度お試しください。"
+        setErrorMessage(errorMsg)
+        setChatMessages([
+          {
+            role: "ai",
+            content: `申し訳ありません。エラーが発生しました: ${errorMsg}`,
+          },
+        ])
+      } finally {
+        setIsLoading(false)
+      }
+    }
+  }
+
+  const handleReset = () => {
+    // Reset chat-related states
+    setChatMessages([])
+    setCurrentLyrics("")
+    setAnalysisData(null)
+    setAvailableSections([])
+    setSelectedSection("全体を修正する")
+    setInstructionHistory([])
+    setFollowUpInput("")
+    setErrorMessage(null)
+    setIsEditingLyrics(false)
+    setEditedLyrics("")
+    setBackupLyrics("")
+
+    // Notify parent to reset chat state
+    onChatStart(false)
+    setShowResetModal(false)
+  }
+
+  const handleEditClick = () => {
+    setBackupLyrics(currentLyrics)
+    setEditedLyrics(currentLyrics)
+    setIsEditingLyrics(true)
+  }
+
+  const handleEditReset = () => {
+    setShowEditResetModal(false)
+    setEditedLyrics(backupLyrics)
+    setIsEditingLyrics(false)
+  }
+
+  const handleEditConfirm = () => {
+    setCurrentLyrics(editedLyrics)
+    const sections = extractSections(editedLyrics)
+    setAvailableSections(sections)
+    setSelectedSection("全体を修正する")
+
+    // Update the last AI message with edited lyrics
+    setChatMessages((prev) => {
+      const updated = [...prev]
+      const lastAIIndex = updated.findIndex((msg, idx) => idx === updated.length - 1 && msg.role === "ai")
+      if (lastAIIndex !== -1) {
+        updated[lastAIIndex] = { role: "ai", content: editedLyrics }
+      }
+      return updated
+    })
+
+    setIsEditingLyrics(false)
+    setEditedLyrics("")
+    setBackupLyrics("")
+  }
+
+  const handleFollowUp = async () => {
+    if (followUpInput.trim()) {
+      const userMessage = followUpInput.trim()
+      setChatMessages((prev) => [...prev, { role: "user", content: userMessage }])
+
+      // Update instruction history for next call
+      const newHistory = [...instructionHistory, userMessage]
+      setInstructionHistory(newHistory)
+
+      setFollowUpInput("")
+      setIsLoading(true)
+      setErrorMessage(null)
+
+      try {
+        const isFullEdit = selectedSection === "全体を修正する"
+        const targetSection = isFullEdit ? "" : selectedSection
+        const mode = isFullEdit ? "full" : "section"
+
+        const requestBody = {
+          problem: worry,
+          genre: favoriteGenre,
+          mood: songMood,
+          analysis: analysisData || "",
+          lyrics: currentLyrics,
+          mode,
+          target_section: targetSection,
+          instruction: userMessage,
+          instruction_history: instructionHistory,
+        }
+
+        console.log("[v0] Sending edit request:", requestBody)
+
+        const response = await fetch(EDIT_LYRICS_ENDPOINT, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(requestBody),
+        })
+
+        if (!response.ok) {
+          throw new Error(`API Error: ${response.status} ${response.statusText}`)
+        }
+
+        const data: ApiResponse = await response.json()
+        console.log("[v0] Edit API Response received:", data)
+
+        setChatMessages((prev) => [
+          ...prev,
+          {
+            role: "ai",
+            content: data.lyrics,
+          },
+        ])
+
+        setCurrentLyrics(data.lyrics)
+        const sections = extractSections(data.lyrics)
+        setAvailableSections(sections)
+        setSelectedSection("全体を修正する")
+
+        if (data.analysis) {
+          setAnalysisData(data.analysis)
+        }
+      } catch (error) {
+        console.error("[v0] Edit API Error:", error)
+        const errorMsg =
+          error instanceof Error ? error.message : "歌詞の編集に失敗しました。もう一度お試しください。"
+        setErrorMessage(errorMsg)
+        setChatMessages((prev) => [
+          ...prev,
+          {
+            role: "ai",
+            content: `申し訳ありません。エラーが発生しました: ${errorMsg}`,
+          },
+        ])
+      } finally {
+        setIsLoading(false)
+      }
     }
   }
 
   return (
     <>
       <form
-        ref={formRef}
-        onSubmit={handleSubmit}
+        onSubmit={handleStartChat}
         className="bg-gray-900/50 rounded-2xl p-6 md:p-8 backdrop-blur-sm border border-gray-800"
-        action="https://docs.google.com/forms/u/0/d/e/1FAIpQLSfIeDV6G5U2U2zYGRCQNIa28zNtuEpn7lkiaa1H0b8F2_SAHw/formResponse"
-        method="post"
-        target="dummyIframe"
       >
         <h2 className="text-2xl md:text-3xl font-bold mb-6">
           {selectedPurpose === "gift"
@@ -79,63 +286,7 @@ export default function InputForm({ onSubmit, selectedPurpose }: InputFormProps)
               ? "あなたの気持ちを聞かせてください"
               : "詳細を入力してください"}
         </h2>
-        <input
-          type="text"
-          name="entry.769498571"
-          value={selectedPurpose ?? ""}
-          readOnly
-          className="hidden"
-        />
         <div className="space-y-6">
-          <div className="space-y-2">
-            <label htmlFor="email" className="block text-sm font-medium">
-              あなたのメールアドレス <span className="text-pink-500">*</span>
-            </label>
-            <div className="relative">
-              <Input
-                id="email"
-                name="entry.511433383"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="example@mail.com"
-                className={cn(
-                  "bg-black/50 border-gray-700 focus:border-teal-400 transition-all",
-                  errors.email ? "border-red-500" : "",
-                )}
-              />
-              {errors.email && (
-                <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                  <AlertCircle className="h-5 w-5 text-red-500" />
-                </div>
-              )}
-            </div>
-            {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
-          </div>
-          <div className="space-y-2">
-            <label htmlFor="nameInput" className="block text-sm font-medium">
-              あなたの名前 <span className="text-gray-400 text-xs">※仮名やニックネームでも可</span> <span className="text-pink-500">*</span>
-            </label>
-            <div className="relative">
-              <Input
-                id="nameInput"
-                name="entry.1769110912"
-                type="text"
-                value={nameInput}
-                onChange={(e) => setNameInput(e.target.value)}
-                className={cn(
-                  "bg-black/50 border-gray-700 focus:border-teal-400 transition-all",
-                  errors.nameInput ? "border-red-500" : "",
-                )}
-              />
-              {errors.nameInput && (
-                <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                  <AlertCircle className="h-5 w-5 text-red-500" />
-                </div>
-              )}
-            </div>
-            {errors.nameInput && <p className="text-red-500 text-sm mt-1">{errors.nameInput}</p>}
-          </div>
           <div className="space-y-2">
             <label htmlFor="worry" className="block text-sm font-medium">
               {selectedPurpose === "gift"
@@ -151,9 +302,11 @@ export default function InputForm({ onSubmit, selectedPurpose }: InputFormProps)
                 name="entry.731280237"
                 value={worry}
                 onChange={(e) => setWorry(e.target.value)}
+                disabled={chatStarted}
                 className={cn(
                   "bg-black/50 border-gray-700 focus:border-teal-400 transition-all min-h-[120px]",
                   errors.worry ? "border-red-500" : "",
+                  chatStarted ? "opacity-70 cursor-not-allowed" : "",
                 )}
               />
               {errors.worry && (
@@ -165,80 +318,362 @@ export default function InputForm({ onSubmit, selectedPurpose }: InputFormProps)
             {errors.worry && <p className="text-red-500 text-sm mt-1">{errors.worry}</p>}
           </div>
 
-          <div className="space-y-2">
-            <label htmlFor="music" className="block text-sm font-medium">
-              {selectedPurpose === "gift"
-                ? "贈りたい相手が好きな 曲／歌手／音楽ジャンル"
-                : selectedPurpose === "self"
-                  ? "あなたが好きな 曲／歌手／音楽ジャンル"
-                  : "好きな 曲／歌手／音楽ジャンル"}
-            </label>
-            <Input
-              id="music"
-              name="entry.787700534"
-              value={music}
-              onChange={(e) => setMusic(e.target.value)}
-              placeholder="ここに記入したものに寄せた音楽を作成します。特に希望が無ければ空欄のままで大丈夫です。"
-              className="bg-black/50 border-gray-700 focus:border-teal-400 transition-all"
-            />
-          </div>
-
-          <div className="pt-4">
-            <h3 className="text-sm font-medium mb-2">プライバシーポリシー</h3>
-            <div className="bg-black/70 border border-gray-800 rounded-md p-4 mb-4 h-40 overflow-y-auto text-sm text-gray-300">
-              <h4 className="font-bold mb-2">プライバシーポリシー</h4>
-              <p className="mb-2">
-                当サービス「Oto Links」は、お客様の個人情報を大切に扱い、以下の方針に基づいて管理・保護いたします。
-              </p>
-              <ol className="list-decimal pl-5 space-y-2">
-                <li>収集する情報：メールアドレス、お悩み内容、音楽の好みに関する情報</li>
-                <li>利用目的：AIによる音楽生成サービスの提供、サービス改善のための分析</li>
-                <li>第三者提供：法令に基づく場合を除き、お客様の同意なく第三者に提供することはありません</li>
-                <li>お問い合わせ：otolinks@ova-japan.org</li>
-              </ol>
+          <div className="space-y-4">
+            <div>
+              <h3 className="text-sm font-medium mb-2">
+                {selectedPurpose === "gift"
+                  ? "どんな音楽を贈りたいか、イメージを教えてください"
+                  : selectedPurpose === "self"
+                    ? "どんな音楽を作りたいか、イメージを教えてください"
+                    : "どんな音楽を贈りたいか、イメージを教えてください"}
+              </h3>
+              <p className="text-xs text-gray-400">（特に思い浮かばない場合は、空欄のままでも大丈夫です。）</p>
             </div>
 
-            <div className="flex items-start space-x-2 mb-4">
-              <Checkbox
-                id="policy"
-                checked={agreeToPolicy}
-                onCheckedChange={(checked) => setAgreeToPolicy(checked === true)}
-                className={cn(
-                  "cursor-pointer",
-                  errors.policy ? "border-red-500" : ""
-                )}
-              />
-              <div className="grid gap-1.5 leading-none">
-                <label
-                  htmlFor="policy"
-                  className={cn(
-                    "text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70",
-                    errors.policy ? "text-red-500" : "",
-                  )}
-                >
-                  プライバシーポリシーに同意する <span className="text-pink-500">*</span>
+            <div className="space-y-4 pl-4">
+              <div className="space-y-2">
+                <label htmlFor="favoriteSong" className="block text-sm font-medium">
+                  参考にしたい曲の曲名
                 </label>
-                {errors.policy && <p className="text-red-500 text-xs">{errors.policy}</p>}
+                <Input
+                  id="favoriteSong"
+                  name="entry.787700534"
+                  value={favoriteSong}
+                  onChange={(e) => setFavoriteSong(e.target.value)}
+                  disabled={chatStarted}
+                  placeholder=""
+                  className={cn("bg-black/50 border-gray-700 focus:border-teal-400 transition-all", chatStarted ? "opacity-70 cursor-not-allowed disabled:pointer-events-auto" : "")}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label htmlFor="favoriteArtist" className="block text-sm font-medium">
+                  イメージに近いアーティスト
+                </label>
+                <Input
+                  id="favoriteArtist"
+                  name="entry.787700535"
+                  value={favoriteArtist}
+                  onChange={(e) => setFavoriteArtist(e.target.value)}
+                  disabled={chatStarted}
+                  placeholder=""
+                  className={cn("bg-black/50 border-gray-700 focus:border-teal-400 transition-all", chatStarted ? "opacity-70 cursor-not-allowed disabled:pointer-events-auto" : "")}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label htmlFor="favoriteGenre" className="block text-sm font-medium">
+                  {selectedPurpose === "gift"
+                    ? "贈りたい曲のジャンル"
+                    : selectedPurpose === "self"
+                      ? "作りたい曲のジャンル"
+                      : "贈りたい曲のジャンル"}
+                </label>
+                <Input
+                  id="favoriteGenre"
+                  name="entry.787700536"
+                  value={favoriteGenre}
+                  onChange={(e) => setFavoriteGenre(e.target.value)}
+                  disabled={chatStarted}
+                  placeholder="例：J-POP／ロック／バラード など"
+                  className={cn("bg-black/50 border-gray-700 focus:border-teal-400 transition-all", chatStarted ? "opacity-70 cursor-not-allowed disabled:pointer-events-auto" : "")}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label htmlFor="songMood" className="block text-sm font-medium">
+                  {selectedPurpose === "gift"
+                    ? "贈りたい曲の雰囲気"
+                    : selectedPurpose === "self"
+                      ? "作りたい曲の雰囲気"
+                      : "贈りたい曲の雰囲気"}
+                </label>
+                <Input
+                  id="songMood"
+                  name="entry.787700537"
+                  value={songMood}
+                  onChange={(e) => setSongMood(e.target.value)}
+                  disabled={chatStarted}
+                  placeholder="例：明るい／切ない／落ち着いた など"
+                  className={cn("bg-black/50 border-gray-700 focus:border-teal-400 transition-all", chatStarted ? "opacity-70 cursor-not-allowed disabled:pointer-events-auto" : "")}
+                />
               </div>
             </div>
+          </div>
 
-            <Button
-              type="submit"
-              className="w-full py-6 text-lg font-bold bg-gradient-to-r from-pink-500 via-teal-400 to-yellow-400 hover:opacity-90 hover:scale-[1.02] transition-all duration-300 cursor-pointer"
-            >
-              送信する
-            </Button>
-            
-            <div className={cn("mt-4 text-center text-sm", !isSubmitted && "hidden")}>
-              <p>入力した内容は正常に送信されました</p>
+          {!chatStarted && (
+            <div className="pt-4">
+              <h3 className="text-sm font-medium mb-2">プライバシーポリシー</h3>
+              <div className="bg-black/70 border border-gray-800 rounded-md p-4 mb-4 h-40 overflow-y-auto text-sm text-gray-300">
+                <h4 className="font-bold mb-2">プライバシーポリシー</h4>
+                <p className="mb-2">
+                  当サービス「Oto Links」は、お��様の個人情報を大切に扱い、以下の方針に基づいて管理・保護いたします。
+                </p>
+                <ol className="list-decimal pl-5 space-y-2">
+                  <li>収集する情報：メールアドレス、お悩み内容、音楽の好みに関する情報</li>
+                  <li>利用目的：AIによる音楽生成サービスの提供、サービス改善のための分析</li>
+                  <li>第三者提供：法令に基づく場合を除き、お客様の同意なく第三者に提供�����ることはありません</li>
+                  <li>お問い合わせ：otolinks@ova-japan.org</li>
+                </ol>
+              </div>
+
+              <div className="flex items-start space-x-2 mb-4">
+                <Checkbox
+                  id="policy"
+                  checked={agreeToPolicy}
+                  onCheckedChange={(checked) => setAgreeToPolicy(checked === true)}
+                  className={cn(
+                    "cursor-pointer",
+                    errors.policy ? "border-red-500" : ""
+                  )}
+                />
+                <div className="grid gap-1.5 leading-none">
+                  <label
+                    htmlFor="policy"
+                    className={cn(
+                      "text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70",
+                      errors.policy ? "text-red-500" : "",
+                    )}
+                  >
+                    プライバシーポリシーに同意する <span className="text-pink-500">*</span>
+                  </label>
+                  {errors.policy && <p className="text-red-500 text-xs">{errors.policy}</p>}
+                </div>
+              </div>
+
+              <Button
+                type="submit"
+                className="w-full py-6 text-lg font-bold bg-gradient-to-r from-pink-500 via-teal-400 to-yellow-400 hover:opacity-90 hover:scale-[1.02] transition-all duration-300 cursor-pointer"
+              >
+                歌詞の作成を開始する
+              </Button>
+              <div className="mt-4 text-center text-sm text-gray-400">
+                <p>Oto LinksはNPO法人OVAによって提供されている無料のサービスです。料金は一切かかりません</p>
+              </div>
             </div>
-            <div className="mt-4 text-center text-sm text-gray-400">
-              <p>Oto LinksはNPO法人OVAによって提供されている無料のサービスです。料金は一切かかりません</p>
+          )}
+        </div>
+      </form>
+
+      {showEditResetModal && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 md:p-8 max-w-md w-full animate-in fade-in slide-in-from-bottom-4 duration-300">
+            <div className="flex justify-end">
+              <button
+                onClick={() => setShowEditResetModal(false)}
+                className="h-8 w-8 rounded-full hover:bg-gray-800 flex items-center justify-center transition-all cursor-pointer"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="text-center">
+              <h2 className="text-xl font-bold mb-4">確認</h2>
+              <p className="text-gray-300 mb-6">編集内容を破棄して編集前の状態に戻ります。よろしいですか？</p>
+
+              <div className="flex gap-3">
+                <Button
+                  onClick={() => setShowEditResetModal(false)}
+                  className="flex-1 px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-200 border border-gray-700 rounded-md transition-all"
+                >
+                  キャンセル
+                </Button>
+                <Button
+                  onClick={handleEditReset}
+                  className="flex-1 px-4 py-2 bg-gradient-to-r from-pink-500 via-teal-400 to-yellow-400 hover:opacity-90 transition-all"
+                >
+                  破棄する
+                </Button>
+              </div>
             </div>
           </div>
         </div>
-      </form>
-      <iframe name="dummyIframe" className="hidden" />
+      )}
+
+      {showResetModal && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 md:p-8 max-w-md w-full animate-in fade-in slide-in-from-bottom-4 duration-300">
+            <div className="flex justify-end">
+              <button
+                onClick={() => setShowResetModal(false)}
+                className="h-8 w-8 rounded-full hover:bg-gray-800 flex items-center justify-center transition-all cursor-pointer"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="text-center">
+              <h2 className="text-xl font-bold mb-4">確認</h2>
+              <p className="text-gray-300 mb-6">今まで作成した歌詞が削除されますがよろしいですか？</p>
+
+              <div className="flex gap-3">
+                <Button
+                  onClick={() => setShowResetModal(false)}
+                  className="flex-1 px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-200 border border-gray-700 rounded-md transition-all hover:cursor-pointer"
+                >
+                  キャンセル
+                </Button>
+                <Button
+                  onClick={handleReset}
+                  className="flex-1 px-4 py-2 bg-gradient-to-r from-pink-500 via-teal-400 to-yellow-400 hover:opacity-90 transition-all hover:cursor-pointer"
+                >
+                  削除する
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {chatStarted && (
+        <div className="mt-6 bg-gray-900/50 rounded-2xl p-6 md:p-8 backdrop-blur-sm border border-gray-800 space-y-6">
+          {errorMessage && (
+            <div className="bg-red-500/10 border border-red-500/50 rounded-lg p-4">
+              <p className="text-red-400 text-sm">{errorMessage}</p>
+            </div>
+          )}
+
+          <div className="bg-black/50 rounded-lg p-6 border border-gray-700 min-h-[300px] flex flex-col space-y-4 overflow-y-auto">
+            {chatMessages.map((message, index) => {
+              const isLastAIMessage = index === chatMessages.length - 1 && message.role === "ai"
+              const showEditMode = isLastAIMessage && isEditingLyrics
+
+              return (
+                <div key={index}>
+                  <div
+                    className={cn(
+                      "flex",
+                      message.role === "user" ? "justify-end" : "justify-start"
+                    )}
+                  >
+                    {showEditMode ? (
+                      <div className="w-full">
+                        <Textarea
+                          value={editedLyrics}
+                          onChange={(e) => setEditedLyrics(e.target.value)}
+                          className="w-full !bg-white text-black border border-gray-300 rounded-lg p-4 focus:border-teal-400 focus:outline-none transition-all min-h-[300px] whitespace-pre-wrap font-mono text-sm"
+                        />
+                      </div>
+                    ) : (
+                      <div
+                        className={cn(
+                          "max-w-xs lg:max-w-md px-4 py-2 rounded-lg whitespace-pre-wrap",
+                          message.role === "user"
+                            ? "bg-teal-500/30 text-gray-200 border border-teal-400/50"
+                            : "bg-gray-800/50 text-gray-300 border border-gray-700"
+                        )}
+                      >
+                        <p className="leading-relaxed">{message.content}</p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Show edit button only for the last AI message when not editing */}
+                  {isLastAIMessage && !isEditingLyrics && (
+                    <div className="flex justify-start mt-3">
+                      <Button
+                        onClick={handleEditClick}
+                        className="px-4 py-2 text-sm font-medium bg-gradient-to-r from-pink-500 via-teal-400 to-yellow-400 hover:opacity-90 text-white rounded-lg transition-all hover:cursor-pointer"
+                      >
+                        自分で編集する
+                      </Button>
+                    </div>
+                  )}
+
+                  {/* Show confirm/reset buttons only when editing the last message */}
+                  {showEditMode && (
+                    <div className="flex gap-2 mt-3">
+                      <Button
+                        onClick={() => setShowEditResetModal(true)}
+                        className="flex-1 px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-200 border border-gray-700 rounded-md transition-all hover:cursor-pointer"
+                      >
+                        リセット
+                      </Button>
+                      <Button
+                        onClick={handleEditConfirm}
+                        className="flex-1 px-4 py-2 bg-gradient-to-r from-pink-500 via-teal-400 to-yellow-400 hover:opacity-90 transition-all hover:cursor-pointer"
+                      >
+                        確定
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+
+            {isLoading && (
+              <div className="flex items-center justify-center gap-2 py-8">
+                <Loader className="h-5 w-5 animate-spin text-teal-400" />
+                <span className="text-gray-300">歌詞を考えています...</span>
+              </div>
+            )}
+          </div>
+
+          <div className="space-y-3">
+            <Button
+              onClick={() => setShowResetModal(true)}
+              className="w-full px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-200 border border-gray-700 rounded-md transition-all hover:cursor-pointer flex items-center justify-center gap-2"
+            >
+              <RotateCcw className="h-4 w-4" />
+              最初からやり直す
+            </Button>
+
+            <div className="group relative">
+              <label className="block text-sm font-medium mb-2">
+                修正したいセクションを選択
+              </label>
+              <select
+                value={selectedSection}
+                onChange={(e) => !isEditingLyrics && setSelectedSection(e.target.value)}
+                disabled={isLoading || isEditingLyrics}
+                className={cn("w-full bg-black/50 border border-gray-700 rounded-md px-3 py-2 text-gray-200 focus:border-teal-400 focus:outline-none transition-all", (isLoading || isEditingLyrics) ? "opacity-70 cursor-not-allowed" : "")}
+              >
+                <option value="全体を修正する">全体を修正する</option>
+                {availableSections.map((section) => (
+                  <option key={section} value={section}>
+                    {section}
+                  </option>
+                ))}
+              </select>
+              {isEditingLyrics && (
+                <div className="absolute top-full left-0 mt-2 hidden group-hover:block bg-gray-900 border border-gray-700 rounded-md px-3 py-1 text-xs text-gray-200 whitespace-nowrap z-10">
+                  自分で編集を先に確定させてください
+                </div>
+              )}
+            </div>
+
+            <label htmlFor="followUp" className="block text-sm font-medium">
+              追加の指示
+            </label>
+            <div className="flex gap-2 group relative">
+              <Input
+                id="followUp"
+                value={followUpInput}
+                onChange={(e) => setFollowUpInput(e.target.value)}
+                onKeyPress={(e) => e.key === "Enter" && !isLoading && !isEditingLyrics && handleFollowUp()}
+                placeholder="さらに指示を入力してください..."
+                disabled={isLoading || isEditingLyrics}
+                className={cn("bg-black/50 border-gray-700 focus:border-teal-400 transition-all", (isLoading || isEditingLyrics) ? "opacity-70 cursor-not-allowed" : "")}
+              />
+              <div className="relative">
+                <Button
+                  onClick={isEditingLyrics ? undefined : handleFollowUp}
+                  disabled={isLoading || isEditingLyrics}
+                  className={cn("px-4 py-2 bg-gradient-to-r from-pink-500 via-teal-400 to-yellow-400 hover:opacity-90 hover:cursor-pointer transition-all", (isLoading || isEditingLyrics) ? "opacity-70 cursor-not-allowed" : "")}
+                  title={isEditingLyrics ? "自分で編集を先に確定させてください" : ""}
+                >
+                  {isLoading ? <Loader className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                </Button>
+                {isEditingLyrics && (
+                  <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 hidden group-hover:block bg-gray-900 border border-gray-700 rounded-md px-3 py-1 text-xs text-gray-200 whitespace-nowrap">
+                    自分で編集を先に確定させてください
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   )
 }
