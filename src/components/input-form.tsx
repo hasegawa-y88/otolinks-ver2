@@ -372,7 +372,7 @@ export default function InputForm({ selectedPurpose, onChatStart, chatStarted }:
                 <ol className="list-decimal pl-5 space-y-2">
                   <li>収集する情報：メールアドレス、お悩み内容、音楽の好みに関する情報</li>
                   <li>利用目的：AIによる音楽生成サービスの提供、サービス改善のための分析</li>
-                  <li>第三者提供：法令に基づく場合を除き、お客様の同意なく第三者に提供することはありません</li>
+                  <li>第三者提供：法令に基づく場合を除き、お客様の同意なく第三者に提供���ることはありません</li>
                   <li>お問い合わせ：otolinks@ova-japan.org</li>
                 </ol>
               </div>
@@ -504,7 +504,8 @@ export default function InputForm({ selectedPurpose, onChatStart, chatStarted }:
               <select
                 value={selectedSection}
                 onChange={(e) => setSelectedSection(e.target.value)}
-                className="w-full bg-black/50 border border-gray-700 rounded-md px-3 py-2 text-gray-200 focus:border-teal-400 focus:outline-none transition-all"
+                disabled={isLoading}
+                className={cn("w-full bg-black/50 border border-gray-700 rounded-md px-3 py-2 text-gray-200 focus:border-teal-400 focus:outline-none transition-all", isLoading ? "opacity-70 cursor-not-allowed" : "")}
               >
                 <option value="全体を修正する">全体を修正する</option>
                 {availableSections.map((section) => (
