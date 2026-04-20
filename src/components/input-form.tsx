@@ -407,12 +407,12 @@ export default function InputForm({ selectedPurpose, onChatStart, chatStarted }:
               <div className="bg-black/70 border border-gray-800 rounded-md p-4 mb-4 h-40 overflow-y-auto text-sm text-gray-300">
                 <h4 className="font-bold mb-2">プライバシーポリシー</h4>
                 <p className="mb-2">
-                  当サービス「Oto Links」は、お��様の個人情報を大切に扱い、以下の方針に基づいて管理・保護いたします。
+                  当サービス「Oto Links」は、お客様の個人情報を大切に扱い、以下の方針に基づいて管理・保護いたします。
                 </p>
                 <ol className="list-decimal pl-5 space-y-2">
                   <li>収集する情報：メールアドレス、お悩み内容、音楽の好みに関する情報</li>
                   <li>利用目的：AIによる音楽生成サービスの提供、サービス改善のための分析</li>
-                  <li>第三者提供：法令に基づく場合を除き、お客様の同意なく第三者に提供�����ることはありません</li>
+                  <li>第三者提供：法令に基づく場合を除き、お客様の同意なく第三者に提供することはありません</li>
                   <li>お問い合わせ：otolinks@ova-japan.org</li>
                 </ol>
               </div>
