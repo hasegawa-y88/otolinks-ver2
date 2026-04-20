@@ -28,7 +28,8 @@ export function middleware(req: NextRequest) {
         if (user === process.env.BASIC_ID && pwd === process.env.BASIC_PWD) {
             return NextResponse.next();
         }
-    } catch () {
+    } catch (e) {
+        console.error(e);
         return new Response('Invalid Authentication', { status: 400 });
     }
 
